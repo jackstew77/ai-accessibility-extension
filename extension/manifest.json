@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "AI Accessibility Assistant",
+  "version": "1.0",
+  "description": "AI-powered web accessibility overlay",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": [
+    "https://ai-accessibility-extension.onrender.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

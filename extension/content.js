@@ -1,4 +1,15 @@
-document.addEventListener("mouseup", async () => {
+let overlayOpen = false;
+
+document.addEventListener("mouseup", async (event) => {
+
+  // If overlay is open and user clicked inside it, do nothing
+  const existingOverlay = document.getElementById("ai-overlay");
+  if (existingOverlay && existingOverlay.contains(event.target)) {
+    return;
+  }
+
+  if (overlayOpen) return;
+
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 
@@ -13,6 +24,7 @@ document.addEventListener("mouseup", async () => {
 
 function showOptionsOverlay(rect, selectedText, range) {
   removeExistingOverlay();
+  overlayOpen = true;
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
@@ -46,7 +58,10 @@ function showOptionsOverlay(rect, selectedText, range) {
 
   document.body.appendChild(overlay);
 
-  document.getElementById("close-btn").onclick = () => overlay.remove();
+  document.getElementById("close-btn").onclick = () => {
+    overlayOpen = false;
+    overlay.remove();
+  };
 
   document.getElementById("run-btn").onclick = async () => {
     const mode = document.getElementById("mode-select").value;
@@ -99,11 +114,15 @@ function showResultOverlay(rect, text, range) {
 
   document.body.appendChild(overlay);
 
-  document.getElementById("close-btn").onclick = () => overlay.remove();
+  document.getElementById("close-btn").onclick = () => {
+    overlayOpen = false;
+    overlay.remove();
+  };
 
   document.getElementById("replace-btn").onclick = () => {
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
+    overlayOpen = false;
     overlay.remove();
   };
 }

@@ -2,55 +2,84 @@ document.addEventListener("mouseup", async () => {
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 
-  // Only trigger if meaningful selection
   if (!selectedText || selectedText.length < 20) return;
 
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
 
-  showLoadingOverlay(rect);
-
-  try {
-    const response = await fetch(
-      "https://ai-accessibility-extension.onrender.com/transform",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          text: selectedText,
-          mode: "simplify"   // you can change this later
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (data.output) {
-      showResultOverlay(rect, data.output, range);
-    } else if (data.error) {
-      showResultOverlay(rect, "Backend Error: " + data.error, range);
-    } else {
-      showResultOverlay(rect, "Unexpected response from server.", range);
-    }
-
-  } catch (error) {
-    showResultOverlay(rect, "Failed to connect to server.", range);
-  }
+  showOptionsOverlay(rect, selectedText, range);
 });
 
 
-function showLoadingOverlay(rect) {
+function showOptionsOverlay(rect, selectedText, range) {
   removeExistingOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
   styleOverlay(overlay, rect);
-  overlay.innerText = "✨ Processing...";
+
+  overlay.innerHTML = `
+    <div style="margin-bottom:8px;">
+      <label>Mode:</label>
+      <select id="mode-select">
+        <option value="simplify">Simplify</option>
+        <option value="summarize">Summarize</option>
+        <option value="explain">Explain</option>
+        <option value="translate">Translate (Spanish)</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:8px;">
+      <label>Reading Level:</label>
+      <select id="level-select">
+        <option value="3rd grade">3rd Grade</option>
+        <option value="5th grade" selected>5th Grade</option>
+        <option value="8th grade">8th Grade</option>
+        <option value="High School">High School</option>
+      </select>
+    </div>
+
+    <button id="run-btn" style="margin-right:8px;">Run</button>
+    <button id="close-btn">Close</button>
+  `;
 
   document.body.appendChild(overlay);
+
+  document.getElementById("close-btn").onclick = () => overlay.remove();
+
+  document.getElementById("run-btn").onclick = async () => {
+    const mode = document.getElementById("mode-select").value;
+    const level = document.getElementById("level-select").value;
+
+    overlay.innerHTML = "✨ Processing...";
+
+    try {
+      const response = await fetch(
+        "https://ai-accessibility-extension.onrender.com/transform",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: selectedText,
+            mode: mode,
+            level: level
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.output) {
+        showResultOverlay(rect, data.output, range);
+      } else {
+        showResultOverlay(rect, "Error: " + (data.error || "Unknown error"), range);
+      }
+
+    } catch (err) {
+      showResultOverlay(rect, "Connection failed.", range);
+    }
+  };
 }
 
 
@@ -68,17 +97,9 @@ function showResultOverlay(rect, text, range) {
     <button id="close-btn">Close</button>
   `;
 
-  overlay.style.opacity = "0";
-  overlay.style.transition = "opacity 0.2s ease-in";
   document.body.appendChild(overlay);
 
-  setTimeout(() => {
-    overlay.style.opacity = "1";
-  }, 10);
-
-  document.getElementById("close-btn").onclick = () => {
-    overlay.remove();
-  };
+  document.getElementById("close-btn").onclick = () => overlay.remove();
 
   document.getElementById("replace-btn").onclick = () => {
     range.deleteContents();

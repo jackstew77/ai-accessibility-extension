@@ -2,6 +2,7 @@ document.addEventListener("mouseup", async () => {
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 
+  // Only trigger if meaningful selection
   if (!selectedText || selectedText.length < 20) return;
 
   const range = selection.getRangeAt(0);
@@ -11,13 +12,16 @@ document.addEventListener("mouseup", async () => {
 
   try {
     const response = await fetch(
-      "https://ai-accessibility-extension.onrender.com/simplify",
+      "https://ai-accessibility-extension.onrender.com/transform",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ text: selectedText })
+        body: JSON.stringify({
+          text: selectedText,
+          mode: "simplify"   // you can change this later
+        })
       }
     );
 
@@ -25,8 +29,10 @@ document.addEventListener("mouseup", async () => {
 
     if (data.output) {
       showResultOverlay(rect, data.output, range);
+    } else if (data.error) {
+      showResultOverlay(rect, "Backend Error: " + data.error, range);
     } else {
-      showResultOverlay(rect, "Error: " + (data.error || "Unknown error"), range);
+      showResultOverlay(rect, "Unexpected response from server.", range);
     }
 
   } catch (error) {
@@ -42,7 +48,7 @@ function showLoadingOverlay(rect) {
   overlay.id = "ai-overlay";
 
   styleOverlay(overlay, rect);
-  overlay.innerText = "✨ Simplifying...";
+  overlay.innerText = "✨ Processing...";
 
   document.body.appendChild(overlay);
 }
@@ -57,8 +63,8 @@ function showResultOverlay(rect, text, range) {
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
-    <div style="margin-bottom:6px;">${text}</div>
-    <button id="replace-btn" style="margin-right:6px;">Replace</button>
+    <div style="margin-bottom:8px;">${text}</div>
+    <button id="replace-btn" style="margin-right:8px;">Replace</button>
     <button id="close-btn">Close</button>
   `;
 
@@ -66,9 +72,13 @@ function showResultOverlay(rect, text, range) {
   overlay.style.transition = "opacity 0.2s ease-in";
   document.body.appendChild(overlay);
 
-  setTimeout(() => overlay.style.opacity = "1", 10);
+  setTimeout(() => {
+    overlay.style.opacity = "1";
+  }, 10);
 
-  document.getElementById("close-btn").onclick = () => overlay.remove();
+  document.getElementById("close-btn").onclick = () => {
+    overlay.remove();
+  };
 
   document.getElementById("replace-btn").onclick = () => {
     range.deleteContents();
@@ -84,11 +94,12 @@ function styleOverlay(overlay, rect) {
   overlay.style.left = window.scrollX + rect.left + "px";
   overlay.style.width = rect.width + "px";
   overlay.style.background = "white";
-  overlay.style.padding = "10px";
+  overlay.style.padding = "12px";
   overlay.style.border = "2px solid #333";
   overlay.style.zIndex = 9999;
-  overlay.style.boxShadow = "0px 6px 18px rgba(0,0,0,0.25)";
+  overlay.style.boxShadow = "0px 8px 20px rgba(0,0,0,0.25)";
   overlay.style.fontSize = "14px";
+  overlay.style.lineHeight = "1.5";
   overlay.style.borderRadius = "8px";
 }
 

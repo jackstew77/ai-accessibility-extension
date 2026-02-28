@@ -6,7 +6,6 @@ import os
 
 app = FastAPI()
 
-# Allow Chrome extension to communicate with backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,35 +14,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize OpenAI client using Render environment variable
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
-# Request model
 class TextRequest(BaseModel):
     text: str
     mode: str = "simplify"
+    level: str = "5th grade"
 
 
-# Health check route
 @app.get("/")
 def home():
     return {"status": "Backend running"}
 
 
-# Main AI transformation endpoint
 @app.post("/transform")
 async def transform_text(request: TextRequest):
     try:
-        prompts = {
-            "simplify": "Rewrite the text at a 5th grade reading level while preserving meaning.",
-            "summarize": "Summarize this text clearly and concisely.",
-            "explain": "Explain this text in very simple terms.",
-            "translate": "Translate this text into Spanish."
-        }
+        if request.mode == "simplify":
+            system_prompt = f"Rewrite this text at a {request.level} reading level while preserving meaning."
 
-        # Default to simplify if mode not recognized
-        system_prompt = prompts.get(request.mode, prompts["simplify"])
+        elif request.mode == "summarize":
+            system_prompt = "Summarize this text clearly and concisely."
+
+        elif request.mode == "explain":
+            system_prompt = "Explain this text in very simple terms."
+
+        elif request.mode == "translate":
+            system_prompt = "Translate this text into Spanish."
+
+        else:
+            system_prompt = "Rewrite the text clearly."
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -53,9 +54,7 @@ async def transform_text(request: TextRequest):
             ]
         )
 
-        output_text = response.choices[0].message.content
-
-        return {"output": output_text}
+        return {"output": response.choices[0].message.content}
 
     except Exception as e:
         return {"error": str(e)}

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Accessibility Assistant",
+  "name": "AI Accessibility",
   "version": "1.0",
   "description": "AI-powered web accessibility overlay",
   "permissions": ["activeTab", "scripting"],

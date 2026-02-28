@@ -20,16 +20,10 @@ function showOptionsOverlay(rect, selectedText, range) {
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
-
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
-    <div style="
-      font-weight:600;
-      font-size:16px;
-      margin-bottom:14px;
-      color:#1f3c88;
-    ">
+    <div style="font-weight:600; font-size:16px; margin-bottom:14px; color:#1f3c88;">
       ClariFi Education Tools
     </div>
 
@@ -90,10 +84,8 @@ function showOptionsOverlay(rect, selectedText, range) {
     const mode = document.getElementById("mode-select").value;
     const level = document.getElementById("level-select").value;
 
-    // If Read Aloud → no backend call
     if (mode === "read") {
-      speakText(selectedText);
-      overlay.remove();
+      showLanguageSelector(rect, selectedText);
       return;
     }
 
@@ -133,7 +125,6 @@ function showResultOverlay(rect, text, range) {
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
-
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
@@ -178,11 +169,82 @@ function showResultOverlay(rect, text, range) {
 }
 
 
-function speakText(text) {
+function showLanguageSelector(rect, text) {
+  removeExistingOverlay();
+
+  const overlay = document.createElement("div");
+  overlay.id = "ai-overlay";
+  styleOverlay(overlay, rect);
+
+  overlay.innerHTML = `
+    <div style="font-weight:600; font-size:16px; margin-bottom:14px; color:#1f3c88;">
+      Select Reading Language
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <select id="voice-language" style="width:100%; padding:6px;">
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="es-ES">Spanish</option>
+        <option value="fr-FR">French</option>
+        <option value="de-DE">German</option>
+      </select>
+    </div>
+
+    <div style="text-align:right;">
+      <button id="speak-btn" style="
+        background:#2c6ecb;
+        color:white;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        font-weight:500;
+      ">
+        Start Reading
+      </button>
+
+      <button id="cancel-btn" style="
+        background:#e6eef8;
+        color:#2c6ecb;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        margin-left:6px;
+      ">
+        Cancel
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById("cancel-btn").onclick = () => overlay.remove();
+
+  document.getElementById("speak-btn").onclick = () => {
+    const language = document.getElementById("voice-language").value;
+    speakText(text, language);
+    overlay.remove();
+  };
+}
+
+
+function speakText(text, language = "en-US") {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 1;
   utterance.pitch = 1;
-  utterance.lang = "en-US";
+  utterance.lang = language;
+
+  const voices = window.speechSynthesis.getVoices();
+
+  let selectedVoice = voices.find(voice =>
+    voice.lang.startsWith(language)
+  );
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);

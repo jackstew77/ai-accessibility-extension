@@ -6,7 +6,7 @@ import os
 
 app = FastAPI()
 
-# Allow Chrome extension to talk to backend
+# Allow Chrome extension to communicate with backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,42 +15,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load API key from Render environment variable
+# Initialize OpenAI client using Render environment variable
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 # Request model
 class TextRequest(BaseModel):
     text: str
+    mode: str = "simplify"
 
 
-# Root route (for testing)
+# Health check route
 @app.get("/")
 def home():
     return {"status": "Backend running"}
 
 
-# Simplify endpoint
-@app.post("/simplify")
-async def simplify_text(request: TextRequest):
+# Main AI transformation endpoint
+@app.post("/transform")
+async def transform_text(request: TextRequest):
     try:
+        prompts = {
+            "simplify": "Rewrite the text at a 5th grade reading level while preserving meaning.",
+            "summarize": "Summarize this text clearly and concisely.",
+            "explain": "Explain this text in very simple terms.",
+            "translate": "Translate this text into Spanish."
+        }
+
+        # Default to simplify if mode not recognized
+        system_prompt = prompts.get(request.mode, prompts["simplify"])
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are an accessibility assistant. Rewrite the text at a 5th grade reading level while preserving meaning."
-                },
-                {
-                    "role": "user",
-                    "content": request.text
-                }
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.text}
             ]
         )
 
-        simplified_text = response.choices[0].message.content
+        output_text = response.choices[0].message.content
 
-        return {"output": simplified_text}
+        return {"output": output_text}
 
     except Exception as e:
         return {"error": str(e)}

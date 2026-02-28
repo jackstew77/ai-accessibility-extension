@@ -1,19 +1,12 @@
-let overlayOpen = false;
+document.addEventListener("keydown", async (event) => {
 
-document.addEventListener("mouseup", async (event) => {
-
-  // If overlay is open and user clicked inside it, do nothing
-  const existingOverlay = document.getElementById("ai-overlay");
-  if (existingOverlay && existingOverlay.contains(event.target)) {
-    return;
-  }
-
-  if (overlayOpen) return;
+  // Hotkey: Ctrl + Shift + L
+  if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
 
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 
-  if (!selectedText || selectedText.length < 20) return;
+  if (!selectedText || selectedText.length < 5) return;
 
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
@@ -24,7 +17,6 @@ document.addEventListener("mouseup", async (event) => {
 
 function showOptionsOverlay(rect, selectedText, range) {
   removeExistingOverlay();
-  overlayOpen = true;
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
@@ -32,42 +24,80 @@ function showOptionsOverlay(rect, selectedText, range) {
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
-    <div style="margin-bottom:8px;">
-      <label>Mode:</label>
-      <select id="mode-select">
+    <div style="
+      font-weight:600;
+      font-size:16px;
+      margin-bottom:14px;
+      color:#1f3c88;
+    ">
+      ClariFi Education Tools
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <label style="font-weight:500;">Mode:</label><br/>
+      <select id="mode-select" style="width:100%; padding:6px; margin-top:4px;">
         <option value="simplify">Simplify</option>
         <option value="summarize">Summarize</option>
         <option value="explain">Explain</option>
         <option value="translate">Translate (Spanish)</option>
+        <option value="read">🔊 Read Aloud</option>
       </select>
     </div>
 
-    <div style="margin-bottom:8px;">
-      <label>Reading Level:</label>
-      <select id="level-select">
-        <option value="3rd grade">3rd Grade</option>
-        <option value="5th grade" selected>5th Grade</option>
-        <option value="8th grade">8th Grade</option>
-        <option value="High School">High School</option>
+    <div style="margin-bottom:14px;">
+      <label style="font-weight:500;">Lexile Level:</label><br/>
+      <select id="level-select" style="width:100%; padding:6px; margin-top:4px;">
+        <option value="early">Early Reader (BR–400L)</option>
+        <option value="elementary" selected>Elementary (400L–800L)</option>
+        <option value="middle">Middle School (800L–1100L)</option>
+        <option value="high">High School (1100L–1300L)</option>
+        <option value="advanced">Advanced (1300L–1600L)</option>
       </select>
     </div>
 
-    <button id="run-btn" style="margin-right:8px;">Run</button>
-    <button id="close-btn">Close</button>
+    <div style="text-align:right;">
+      <button id="run-btn" style="
+        background:#2c6ecb;
+        color:white;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        font-weight:500;
+      ">
+        Apply
+      </button>
+
+      <button id="close-btn" style="
+        background:#e6eef8;
+        color:#2c6ecb;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        margin-left:6px;
+      ">
+        Cancel
+      </button>
+    </div>
   `;
 
   document.body.appendChild(overlay);
 
-  document.getElementById("close-btn").onclick = () => {
-    overlayOpen = false;
-    overlay.remove();
-  };
+  document.getElementById("close-btn").onclick = () => overlay.remove();
 
   document.getElementById("run-btn").onclick = async () => {
     const mode = document.getElementById("mode-select").value;
     const level = document.getElementById("level-select").value;
 
-    overlay.innerHTML = "✨ Processing...";
+    // If Read Aloud → no backend call
+    if (mode === "read") {
+      speakText(selectedText);
+      overlay.remove();
+      return;
+    }
+
+    overlay.innerHTML = "Processing...";
 
     try {
       const response = await fetch(
@@ -107,24 +137,55 @@ function showResultOverlay(rect, text, range) {
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
-    <div style="margin-bottom:8px;">${text}</div>
-    <button id="replace-btn" style="margin-right:8px;">Replace</button>
-    <button id="close-btn">Close</button>
+    <div style="margin-bottom:12px;">${text}</div>
+
+    <div style="text-align:right;">
+      <button id="replace-btn" style="
+        background:#2c6ecb;
+        color:white;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        font-weight:500;
+      ">
+        Replace
+      </button>
+
+      <button id="close-btn" style="
+        background:#e6eef8;
+        color:#2c6ecb;
+        border:none;
+        padding:8px 14px;
+        border-radius:6px;
+        cursor:pointer;
+        margin-left:6px;
+      ">
+        Close
+      </button>
+    </div>
   `;
 
   document.body.appendChild(overlay);
 
-  document.getElementById("close-btn").onclick = () => {
-    overlayOpen = false;
-    overlay.remove();
-  };
+  document.getElementById("close-btn").onclick = () => overlay.remove();
 
   document.getElementById("replace-btn").onclick = () => {
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
-    overlayOpen = false;
     overlay.remove();
   };
+}
+
+
+function speakText(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.lang = "en-US";
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
 }
 
 
@@ -132,15 +193,16 @@ function styleOverlay(overlay, rect) {
   overlay.style.position = "absolute";
   overlay.style.top = window.scrollY + rect.top + "px";
   overlay.style.left = window.scrollX + rect.left + "px";
-  overlay.style.width = rect.width + "px";
-  overlay.style.background = "white";
-  overlay.style.padding = "12px";
-  overlay.style.border = "2px solid #333";
+  overlay.style.width = "340px";
+  overlay.style.background = "#f9fbff";
+  overlay.style.padding = "18px";
+  overlay.style.border = "1px solid #d0dbe8";
   overlay.style.zIndex = 9999;
-  overlay.style.boxShadow = "0px 8px 20px rgba(0,0,0,0.25)";
+  overlay.style.boxShadow = "0px 8px 24px rgba(0,0,0,0.08)";
   overlay.style.fontSize = "14px";
-  overlay.style.lineHeight = "1.5";
-  overlay.style.borderRadius = "8px";
+  overlay.style.lineHeight = "1.6";
+  overlay.style.borderRadius = "12px";
+  overlay.style.fontFamily = "Arial, sans-serif";
 }
 
 

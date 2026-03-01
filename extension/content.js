@@ -1,11 +1,9 @@
 document.addEventListener("keydown", async (event) => {
 
-  // Hotkey: Ctrl + Shift + L
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
 
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
-
   if (!selectedText || selectedText.length < 5) return;
 
   const range = selection.getRangeAt(0);
@@ -34,11 +32,12 @@ function showOptionsOverlay(rect, selectedText, range) {
         <option value="summarize">Summarize</option>
         <option value="explain">Explain</option>
         <option value="translate">Translate (Spanish)</option>
+        <option value="custom">Custom Prompt</option>
         <option value="read">🔊 Read Aloud</option>
       </select>
     </div>
 
-    <div style="margin-bottom:14px;">
+    <div style="margin-bottom:10px;">
       <label style="font-weight:500;">Lexile Level:</label><br/>
       <select id="level-select" style="width:100%; padding:6px; margin-top:4px;">
         <option value="early">Early Reader (BR–400L)</option>
@@ -49,6 +48,13 @@ function showOptionsOverlay(rect, selectedText, range) {
       </select>
     </div>
 
+    <div id="custom-container" style="display:none; margin-bottom:14px;">
+      <label style="font-weight:500;">Custom Instruction:</label><br/>
+      <textarea id="custom-prompt" rows="3"
+        style="width:100%; padding:6px; margin-top:4px; resize:vertical;"
+        placeholder="Example: Turn this into bullet points for studying..."></textarea>
+    </div>
+
     <div style="text-align:right;">
       <button id="run-btn" style="
         background:#2c6ecb;
@@ -57,8 +63,7 @@ function showOptionsOverlay(rect, selectedText, range) {
         padding:8px 14px;
         border-radius:6px;
         cursor:pointer;
-        font-weight:500;
-      ">
+        font-weight:500;">
         Apply
       </button>
 
@@ -69,8 +74,7 @@ function showOptionsOverlay(rect, selectedText, range) {
         padding:8px 14px;
         border-radius:6px;
         cursor:pointer;
-        margin-left:6px;
-      ">
+        margin-left:6px;">
         Cancel
       </button>
     </div>
@@ -78,11 +82,22 @@ function showOptionsOverlay(rect, selectedText, range) {
 
   document.body.appendChild(overlay);
 
+  const modeSelect = document.getElementById("mode-select");
+  const customContainer = document.getElementById("custom-container");
+
+  modeSelect.addEventListener("change", () => {
+    customContainer.style.display =
+      modeSelect.value === "custom" ? "block" : "none";
+  });
+
   document.getElementById("close-btn").onclick = () => overlay.remove();
 
   document.getElementById("run-btn").onclick = async () => {
-    const mode = document.getElementById("mode-select").value;
+
+    const mode = modeSelect.value;
     const level = document.getElementById("level-select").value;
+    const customPromptValue =
+      document.getElementById("custom-prompt")?.value;
 
     if (mode === "read") {
       showLanguageSelector(rect, selectedText);
@@ -100,7 +115,8 @@ function showOptionsOverlay(rect, selectedText, range) {
           body: JSON.stringify({
             text: selectedText,
             mode: mode,
-            level: level
+            level: level,
+            custom_prompt: mode === "custom" ? customPromptValue : null
           })
         }
       );
@@ -137,9 +153,7 @@ function showResultOverlay(rect, text, range) {
         border:none;
         padding:8px 14px;
         border-radius:6px;
-        cursor:pointer;
-        font-weight:500;
-      ">
+        cursor:pointer;">
         Replace
       </button>
 
@@ -150,8 +164,7 @@ function showResultOverlay(rect, text, range) {
         padding:8px 14px;
         border-radius:6px;
         cursor:pointer;
-        margin-left:6px;
-      ">
+        margin-left:6px;">
         Close
       </button>
     </div>
@@ -177,19 +190,17 @@ function showLanguageSelector(rect, text) {
   styleOverlay(overlay, rect);
 
   overlay.innerHTML = `
-    <div style="font-weight:600; font-size:16px; margin-bottom:14px; color:#1f3c88;">
+    <div style="font-weight:600; margin-bottom:14px; color:#1f3c88;">
       Select Reading Language
     </div>
 
-    <div style="margin-bottom:14px;">
-      <select id="voice-language" style="width:100%; padding:6px;">
-        <option value="en-US">English (US)</option>
-        <option value="en-GB">English (UK)</option>
-        <option value="es-ES">Spanish</option>
-        <option value="fr-FR">French</option>
-        <option value="de-DE">German</option>
-      </select>
-    </div>
+    <select id="voice-language" style="width:100%; padding:6px; margin-bottom:14px;">
+      <option value="en-US">English (US)</option>
+      <option value="en-GB">English (UK)</option>
+      <option value="es-ES">Spanish</option>
+      <option value="fr-FR">French</option>
+      <option value="de-DE">German</option>
+    </select>
 
     <div style="text-align:right;">
       <button id="speak-btn" style="
@@ -198,9 +209,7 @@ function showLanguageSelector(rect, text) {
         border:none;
         padding:8px 14px;
         border-radius:6px;
-        cursor:pointer;
-        font-weight:500;
-      ">
+        cursor:pointer;">
         Start Reading
       </button>
 
@@ -211,8 +220,7 @@ function showLanguageSelector(rect, text) {
         padding:8px 14px;
         border-radius:6px;
         cursor:pointer;
-        margin-left:6px;
-      ">
+        margin-left:6px;">
         Cancel
       </button>
     </div>
@@ -232,19 +240,12 @@ function showLanguageSelector(rect, text) {
 
 function speakText(text, language = "en-US") {
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1;
-  utterance.pitch = 1;
   utterance.lang = language;
 
   const voices = window.speechSynthesis.getVoices();
+  const selectedVoice = voices.find(v => v.lang.startsWith(language));
 
-  let selectedVoice = voices.find(voice =>
-    voice.lang.startsWith(language)
-  );
-
-  if (selectedVoice) {
-    utterance.voice = selectedVoice;
-  }
+  if (selectedVoice) utterance.voice = selectedVoice;
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
@@ -255,7 +256,7 @@ function styleOverlay(overlay, rect) {
   overlay.style.position = "absolute";
   overlay.style.top = window.scrollY + rect.top + "px";
   overlay.style.left = window.scrollX + rect.left + "px";
-  overlay.style.width = "340px";
+  overlay.style.width = "360px";
   overlay.style.background = "#f9fbff";
   overlay.style.padding = "18px";
   overlay.style.border = "1px solid #d0dbe8";

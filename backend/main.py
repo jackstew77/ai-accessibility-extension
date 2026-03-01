@@ -33,11 +33,11 @@ def home():
 async def transform_text(request: TextRequest):
     try:
 
-        # 🔥 CUSTOM PROMPT MODE
+        # 🔥 CUSTOM PROMPT
         if request.mode == "custom" and request.custom_prompt:
             system_prompt = request.custom_prompt
 
-        # 📚 SIMPLIFY WITH LEXILE BANDS
+        # 📚 LEXILE SIMPLIFY
         elif request.mode == "simplify":
 
             lexile_prompts = {
@@ -51,6 +51,36 @@ async def transform_text(request: TextRequest):
             system_prompt = lexile_prompts.get(
                 request.level,
                 lexile_prompts["elementary"]
+            )
+
+        # 🎓 ACADEMIC PRESETS
+        elif request.mode == "study_guide":
+            system_prompt = (
+                "Turn this into a structured study guide with clear headings, "
+                "bullet points, and key terms."
+            )
+
+        elif request.mode == "quiz":
+            system_prompt = (
+                "Create 5 multiple choice quiz questions based on this text. "
+                "Include answer choices and an answer key."
+            )
+
+        elif request.mode == "vocabulary":
+            system_prompt = (
+                "Identify 5 important academic vocabulary words from this text. "
+                "Define them in student-friendly language."
+            )
+
+        elif request.mode == "discussion":
+            system_prompt = (
+                "Create 5 thoughtful discussion questions based on this text."
+            )
+
+        elif request.mode == "cornell":
+            system_prompt = (
+                "Rewrite this content into Cornell Notes format with sections "
+                "for cues/questions, notes, and summary."
             )
 
         # 📝 OTHER MODES

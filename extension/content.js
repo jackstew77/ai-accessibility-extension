@@ -1,9 +1,20 @@
-// =============================
-// 🔥 PHASE 2 – GOVERNED VERSION
-// =============================
+// ==============================
+// 🚀 PHASE 2 – DYNAMIC CLASSROOM VERSION
+// ==============================
 
-const CLASSROOM_CODE = "ENG102-A7X9"; // 🔐 Hardcoded for Phase 2 testing
+let CLASSROOM_CODE = null;
 
+// Load saved classroom code
+chrome.storage.local.get(["classroomCode"], function(result) {
+  if (result.classroomCode) {
+    CLASSROOM_CODE = result.classroomCode;
+  }
+});
+
+
+// ==============================
+// 🔥 HOTKEY (Ctrl + Shift + L)
+// ==============================
 
 document.addEventListener("keydown", async (event) => {
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
@@ -17,9 +28,9 @@ document.addEventListener("keydown", async (event) => {
 });
 
 
-// =============================
+// ==============================
 // 🎓 MAIN MODAL
-// =============================
+// ==============================
 
 function showMainOverlay(selectedText, range) {
   removeOverlay();
@@ -32,7 +43,7 @@ function showMainOverlay(selectedText, range) {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 450px;
+    width: 460px;
     background: #f9fbff;
     padding: 24px;
     border-radius: 16px;
@@ -42,8 +53,20 @@ function showMainOverlay(selectedText, range) {
   `;
 
   overlay.innerHTML = `
-    <div style="font-size:18px; font-weight:600; color:#1f3c88; margin-bottom:18px;">
+    <div style="font-size:18px; font-weight:600; color:#1f3c88; margin-bottom:16px;">
       ClariFi Academic Tools
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-weight:500;">Classroom Code:</label>
+      <input id="classroom-input"
+        type="text"
+        placeholder="Enter classroom code"
+        style="width:100%; padding:8px; margin-top:6px;">
+      <button id="save-classroom"
+        style="margin-top:8px; padding:6px 10px; cursor:pointer;">
+        Save Code
+      </button>
     </div>
 
     <label style="font-weight:500;">Mode:</label>
@@ -105,6 +128,20 @@ function showMainOverlay(selectedText, range) {
   `;
 
   document.body.appendChild(overlay);
+
+  // Load saved classroom code into input
+  const classroomInput = document.getElementById("classroom-input");
+  if (CLASSROOM_CODE) {
+    classroomInput.value = CLASSROOM_CODE;
+  }
+
+  document.getElementById("save-classroom").onclick = () => {
+    const value = classroomInput.value.trim();
+    chrome.storage.local.set({ classroomCode: value }, function() {
+      CLASSROOM_CODE = value;
+      alert("Classroom code saved.");
+    });
+  };
 
   const modeSelect = document.getElementById("mode-select");
   const customContainer = document.getElementById("custom-container");
@@ -169,9 +206,9 @@ function showMainOverlay(selectedText, range) {
 }
 
 
-// =============================
+// ==============================
 // 📄 RESULT MODAL
-// =============================
+// ==============================
 
 function showResultOverlay(text, range) {
   removeOverlay();
@@ -234,9 +271,9 @@ function showResultOverlay(text, range) {
 }
 
 
-// =============================
+// ==============================
 // 🔊 LANGUAGE SELECTOR
-// =============================
+// ==============================
 
 function showLanguageSelector(text) {
   removeOverlay();
@@ -279,9 +316,9 @@ function showLanguageSelector(text) {
 }
 
 
-// =============================
+// ==============================
 // 🎙 SPEECH FUNCTION
-// =============================
+// ==============================
 
 function speakText(text, language = "en-US") {
   const utterance = new SpeechSynthesisUtterance(text);
@@ -291,9 +328,9 @@ function speakText(text, language = "en-US") {
 }
 
 
-// =============================
+// ==============================
 // 🧹 CLEANUP
-// =============================
+// ==============================
 
 function removeOverlay() {
   const existing = document.getElementById("ai-overlay");

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
+from supabase import create_client
 import os
 
 app = FastAPI()
@@ -14,22 +15,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+# 🔐 ENV VARIABLES
+OPENAI_KEY = os.environ["OPENAI_API_KEY"]
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
-
-# 🔐 HARDCODED CLASSROOM RULES (Phase 2 Test)
-HARDCODED_CLASSROOMS = {
-    "ENG102-A7X9": {
-        "locked_lexile": "middle",  # forces 800–1100L
-        "allowed_modes": [
-            "simplify",
-            "study_guide",
-            "quiz",
-            "vocabulary"
-        ],
-        "allow_custom": False
-    }
-}
+client = OpenAI(api_key=OPENAI_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 class TextRequest(BaseModel):
@@ -40,54 +32,49 @@ class TextRequest(BaseModel):
     classroom_code: str | None = None
 
 
-@app.get("/")
-def home():
-    return {"status": "Backend running"}
-
-
 @app.post("/transform")
 async def transform_text(request: TextRequest):
     try:
 
-        # 🔐 APPLY CLASSROOM RULES IF CODE PROVIDED
+        # 🔎 FETCH CLASSROOM FROM SUPABASE
         if request.classroom_code:
-            classroom = HARDCODED_CLASSROOMS.get(request.classroom_code)
+            response = supabase.table("classrooms") \
+                .select("*") \
+                .eq("code", request.classroom_code) \
+                .execute()
 
-            if classroom:
+            if response.data:
+                classroom = response.data[0]
 
-                # Force locked Lexile
+                # 🔐 Enforce locked lexile
                 if classroom["locked_lexile"]:
                     request.level = classroom["locked_lexile"]
 
-                # Block disallowed modes
+                # 🔐 Enforce allowed modes
                 if request.mode not in classroom["allowed_modes"]:
                     return {"error": "This mode is not allowed in this classroom."}
 
-                # Disable custom prompts if not allowed
+                # 🔐 Enforce custom restriction
                 if not classroom["allow_custom"]:
                     request.custom_prompt = None
 
-        # 🔥 CUSTOM PROMPT
+        # ---------------------------
+        # PROMPT GENERATION LOGIC
+        # ---------------------------
+
         if request.mode == "custom" and request.custom_prompt:
             system_prompt = request.custom_prompt
 
-        # 📚 LEXILE SIMPLIFY
         elif request.mode == "simplify":
-
             lexile_prompts = {
-                "early": "Rewrite this text at a Lexile level between BR and 400L using very simple vocabulary and short sentences.",
-                "elementary": "Rewrite this text at a Lexile level between 400L and 800L.",
-                "middle": "Rewrite this text at a Lexile level between 800L and 1100L.",
-                "high": "Rewrite this text at a Lexile level between 1100L and 1300L.",
-                "advanced": "Rewrite this text at a Lexile level between 1300L and 1600L."
+                "early": "Rewrite at Lexile BR–400L.",
+                "elementary": "Rewrite at 400L–800L.",
+                "middle": "Rewrite at 800L–1100L.",
+                "high": "Rewrite at 1100L–1300L.",
+                "advanced": "Rewrite at 1300L–1600L."
             }
+            system_prompt = lexile_prompts.get(request.level, lexile_prompts["elementary"])
 
-            system_prompt = lexile_prompts.get(
-                request.level,
-                lexile_prompts["elementary"]
-            )
-
-        # 🎓 ACADEMIC PRESETS
         elif request.mode == "study_guide":
             system_prompt = "Turn this into a structured study guide with headings and bullet points."
 
@@ -110,12 +97,12 @@ async def transform_text(request: TextRequest):
             system_prompt = "Explain clearly in student-friendly language."
 
         elif request.mode == "translate":
-            system_prompt = "Translate this text into Spanish."
+            system_prompt = "Translate this into Spanish."
 
         else:
             system_prompt = "Rewrite clearly."
 
-        response = client.chat.completions.create(
+        ai_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -123,7 +110,7 @@ async def transform_text(request: TextRequest):
             ]
         )
 
-        return {"output": response.choices[0].message.content}
+        return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
         return {"error": str(e)}

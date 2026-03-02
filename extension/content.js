@@ -1,5 +1,11 @@
-document.addEventListener("keydown", async (event) => {
+// =============================
+// 🔥 PHASE 2 – GOVERNED VERSION
+// =============================
 
+const CLASSROOM_CODE = "ENG102-A7X9"; // 🔐 Hardcoded for Phase 2 testing
+
+
+document.addEventListener("keydown", async (event) => {
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
 
   const selection = window.getSelection();
@@ -7,36 +13,41 @@ document.addEventListener("keydown", async (event) => {
   if (!selectedText || selectedText.length < 5) return;
 
   const range = selection.getRangeAt(0);
-  showCenteredOverlay(selectedText, range);
+  showMainOverlay(selectedText, range);
 });
 
 
-function showCenteredOverlay(selectedText, range) {
-  removeExistingOverlay();
+// =============================
+// 🎓 MAIN MODAL
+// =============================
+
+function showMainOverlay(selectedText, range) {
+  removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
-  overlay.style.position = "fixed";
-  overlay.style.top = "50%";
-  overlay.style.left = "50%";
-  overlay.style.transform = "translate(-50%, -50%)";
-  overlay.style.width = "420px";
-  overlay.style.background = "#f9fbff";
-  overlay.style.padding = "20px";
-  overlay.style.border = "1px solid #d0dbe8";
-  overlay.style.zIndex = 9999;
-  overlay.style.boxShadow = "0px 10px 30px rgba(0,0,0,0.15)";
-  overlay.style.borderRadius = "14px";
-  overlay.style.fontFamily = "Arial, sans-serif";
+  overlay.style = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    background: #f9fbff;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+    z-index: 9999;
+    font-family: Arial, sans-serif;
+  `;
 
   overlay.innerHTML = `
-    <div style="font-weight:600; font-size:18px; margin-bottom:16px; color:#1f3c88;">
+    <div style="font-size:18px; font-weight:600; color:#1f3c88; margin-bottom:18px;">
       ClariFi Academic Tools
     </div>
 
     <label style="font-weight:500;">Mode:</label>
-    <select id="mode-select" style="width:100%; padding:8px; margin:8px 0 12px 0;">
+    <select id="mode-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
       <option value="simplify">Simplify (Lexile)</option>
       <option value="study_guide">Create Study Guide</option>
       <option value="quiz">Generate Quiz</option>
@@ -52,19 +63,21 @@ function showCenteredOverlay(selectedText, range) {
 
     <div id="lexile-container">
       <label style="font-weight:500;">Lexile Level:</label>
-      <select id="level-select" style="width:100%; padding:8px; margin:8px 0 12px 0;">
+      <select id="level-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
         <option value="early">Early Reader (BR–400L)</option>
-        <option value="elementary" selected>Elementary (400L–800L)</option>
-        <option value="middle">Middle School (800L–1100L)</option>
+        <option value="elementary">Elementary (400L–800L)</option>
+        <option value="middle" selected>Middle School (800L–1100L)</option>
         <option value="high">High School (1100L–1300L)</option>
         <option value="advanced">Advanced (1300L–1600L)</option>
       </select>
     </div>
 
     <div id="custom-container" style="display:none;">
-      <textarea id="custom-prompt" rows="3"
-        style="width:100%; padding:8px; margin-bottom:12px;"
-        placeholder="Enter your custom instruction..."></textarea>
+      <textarea id="custom-prompt"
+        rows="3"
+        style="width:100%; padding:10px; margin-bottom:16px;"
+        placeholder="Enter your custom instruction...">
+      </textarea>
     </div>
 
     <div style="text-align:right;">
@@ -72,19 +85,19 @@ function showCenteredOverlay(selectedText, range) {
         background:#2c6ecb;
         color:white;
         border:none;
-        padding:10px 16px;
-        border-radius:6px;
+        padding:10px 18px;
+        border-radius:8px;
         cursor:pointer;">
         Apply
       </button>
 
-      <button id="close-btn" style="
+      <button id="cancel-btn" style="
         background:#e6eef8;
         color:#2c6ecb;
         border:none;
-        padding:10px 16px;
-        border-radius:6px;
-        margin-left:8px;
+        padding:10px 18px;
+        border-radius:8px;
+        margin-left:10px;
         cursor:pointer;">
         Cancel
       </button>
@@ -105,7 +118,7 @@ function showCenteredOverlay(selectedText, range) {
       modeSelect.value === "simplify" ? "block" : "none";
   });
 
-  document.getElementById("close-btn").onclick = () => overlay.remove();
+  document.getElementById("cancel-btn").onclick = () => removeOverlay();
 
   document.getElementById("apply-btn").onclick = async () => {
 
@@ -116,54 +129,72 @@ function showCenteredOverlay(selectedText, range) {
       return;
     }
 
-    overlay.innerHTML = "<div style='text-align:center;'>Processing...</div>";
+    overlay.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        Processing...
+      </div>
+    `;
 
-    const response = await fetch(
-      "https://ai-accessibility-extension.onrender.com/transform",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: selectedText,
-          mode: mode,
-          level: document.getElementById("level-select")?.value,
-          custom_prompt:
-            mode === "custom"
-              ? document.getElementById("custom-prompt").value
-              : null
-        })
+    try {
+      const response = await fetch(
+        "https://ai-accessibility-extension.onrender.com/transform",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: selectedText,
+            mode: mode,
+            level: document.getElementById("level-select")?.value,
+            custom_prompt:
+              mode === "custom"
+                ? document.getElementById("custom-prompt").value
+                : null,
+            classroom_code: CLASSROOM_CODE
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.error) {
+        showResultOverlay("❌ " + data.error, range);
+      } else {
+        showResultOverlay(data.output, range);
       }
-    );
 
-    const data = await response.json();
-
-    showResultOverlay(data.output || "Error occurred", range);
+    } catch (err) {
+      showResultOverlay("Connection failed.", range);
+    }
   };
 }
 
 
+// =============================
+// 📄 RESULT MODAL
+// =============================
+
 function showResultOverlay(text, range) {
-  removeExistingOverlay();
+  removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
   overlay.style = `
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    width:500px;
-    background:white;
-    padding:20px;
-    border-radius:14px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.2);
-    z-index:9999;
-    font-family:Arial;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 520px;
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+    z-index: 9999;
+    font-family: Arial, sans-serif;
   `;
 
   overlay.innerHTML = `
-    <div style="margin-bottom:16px; max-height:300px; overflow:auto;">
+    <div style="max-height:320px; overflow:auto; margin-bottom:18px;">
       ${text}
     </div>
 
@@ -172,8 +203,8 @@ function showResultOverlay(text, range) {
         background:#2c6ecb;
         color:white;
         border:none;
-        padding:10px 16px;
-        border-radius:6px;
+        padding:10px 18px;
+        border-radius:8px;
         cursor:pointer;">
         Replace
       </button>
@@ -182,9 +213,9 @@ function showResultOverlay(text, range) {
         background:#e6eef8;
         color:#2c6ecb;
         border:none;
-        padding:10px 16px;
-        border-radius:6px;
-        margin-left:8px;
+        padding:10px 18px;
+        border-radius:8px;
+        margin-left:10px;
         cursor:pointer;">
         Close
       </button>
@@ -193,54 +224,64 @@ function showResultOverlay(text, range) {
 
   document.body.appendChild(overlay);
 
-  document.getElementById("close-btn").onclick = () => overlay.remove();
+  document.getElementById("close-btn").onclick = () => removeOverlay();
 
   document.getElementById("replace-btn").onclick = () => {
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
-    overlay.remove();
+    removeOverlay();
   };
 }
 
 
+// =============================
+// 🔊 LANGUAGE SELECTOR
+// =============================
+
 function showLanguageSelector(text) {
-  removeExistingOverlay();
+  removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
   overlay.style = `
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    width:300px;
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.2);
-    z-index:9999;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 9999;
   `;
 
   overlay.innerHTML = `
-    <select id="voice-language" style="width:100%; padding:8px; margin-bottom:12px;">
+    <select id="voice-language" style="width:100%; padding:8px; margin-bottom:14px;">
       <option value="en-US">English</option>
       <option value="es-ES">Spanish</option>
       <option value="fr-FR">French</option>
       <option value="de-DE">German</option>
     </select>
 
-    <button id="speak-btn" style="width:100%; padding:8px;">Start Reading</button>
+    <button id="speak-btn" style="width:100%; padding:8px;">
+      Start Reading
+    </button>
   `;
 
   document.body.appendChild(overlay);
 
   document.getElementById("speak-btn").onclick = () => {
     speakText(text, document.getElementById("voice-language").value);
-    overlay.remove();
+    removeOverlay();
   };
 }
 
+
+// =============================
+// 🎙 SPEECH FUNCTION
+// =============================
 
 function speakText(text, language = "en-US") {
   const utterance = new SpeechSynthesisUtterance(text);
@@ -250,7 +291,11 @@ function speakText(text, language = "en-US") {
 }
 
 
-function removeExistingOverlay() {
+// =============================
+// 🧹 CLEANUP
+// =============================
+
+function removeOverlay() {
   const existing = document.getElementById("ai-overlay");
   if (existing) existing.remove();
 }

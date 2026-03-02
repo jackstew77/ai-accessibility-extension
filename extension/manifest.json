@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "AI Accessibility",
+  "name": "ClariFi Academic Tools",
   "version": "1.0",
-  "description": "AI-powered web accessibility overlay",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
-    "https://ai-accessibility-extension.onrender.com/*"
+    "<all_urls>"
   ],
   "content_scripts": [
     {

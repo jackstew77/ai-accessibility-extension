@@ -30,6 +30,7 @@ print("DEBUG SUPABASE URL:", SUPABASE_URL)
 client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 # -----------------------------
 # Request Model
 # -----------------------------
@@ -40,12 +41,14 @@ class TextRequest(BaseModel):
     custom_prompt: str | None = None
     classroom_code: str | None = None
 
+
 # -----------------------------
 # Health Check
 # -----------------------------
 @app.get("/")
 def health():
     return {"status": "Backend running"}
+
 
 # -----------------------------
 # Transform Route
@@ -54,7 +57,6 @@ def health():
 async def transform_text(request: TextRequest):
 
     try:
-
         print("\n--- NEW REQUEST ---")
         print("Raw classroom code:", request.classroom_code)
 
@@ -78,7 +80,6 @@ async def transform_text(request: TextRequest):
         match = None
 
         for row in all_rows.data:
-
             db_code = (row.get("code") or "").strip().upper()
             print("Checking DB code:", db_code)
 
@@ -97,13 +98,11 @@ async def transform_text(request: TextRequest):
         # -----------------------------
         allowed_modes = classroom.get("allowed_modes") or []
 
-        # FIX: check custom permission first
-        if request.mode == "custom":
-            if not classroom.get("allowed_custom"):
-                return {"error": "Custom prompts are not allowed in this classroom."}
-
-        if request.mode not in allowed_modes and request.mode != "custom":
+        if request.mode not in allowed_modes:
             return {"error": "This mode is not allowed in this classroom."}
+
+        if request.mode == "custom" and not classroom.get("allow_custom"):
+            return {"error": "Custom prompts are not allowed in this classroom."}
 
         if classroom.get("locked_lexile"):
             request.level = classroom["locked_lexile"]
@@ -112,14 +111,11 @@ async def transform_text(request: TextRequest):
         # Prompt Logic
         # -----------------------------
         if request.mode == "custom":
-
             if not request.custom_prompt:
                 return {"error": "No custom prompt provided."}
-
             system_prompt = request.custom_prompt
 
         elif request.mode == "simplify":
-
             lexile_prompts = {
                 "early": "Rewrite at Lexile BR–400L level.",
                 "elementary": "Rewrite at 400L–800L level.",
@@ -127,7 +123,6 @@ async def transform_text(request: TextRequest):
                 "high": "Rewrite at 1100L–1300L level.",
                 "advanced": "Rewrite at 1300L–1600L level."
             }
-
             system_prompt = lexile_prompts.get(
                 request.level,
                 lexile_prompts["elementary"]
@@ -165,6 +160,5 @@ async def transform_text(request: TextRequest):
         return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
-
         print("SERVER ERROR:", str(e))
         return {"error": str(e)}

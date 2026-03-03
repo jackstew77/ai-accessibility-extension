@@ -69,6 +69,7 @@ def create_classroom(request: ClassroomCreate):
     code = f"{prefix}-{suffix}"
 
     supabase.table("classrooms").insert({
+        "class_name": request.class_name,
         "code": code,
         "locked_lexile": request.locked_lexile,
         "allowed_modes": request.allowed_modes,
@@ -83,8 +84,12 @@ def create_classroom(request: ClassroomCreate):
 @app.get("/classrooms")
 def get_classrooms():
     try:
-        response = supabase.table("classrooms").select("*").execute()
+        response = supabase.table("classrooms").select(
+            "class_name, code, locked_lexile, allowed_modes, allowed_custom"
+        ).execute()
+
         return response.data
+
     except Exception as e:
         print("SERVER ERROR:", str(e))
         return {"error": str(e)}

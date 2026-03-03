@@ -30,6 +30,7 @@ print("DEBUG SUPABASE URL:", SUPABASE_URL)
 client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 # -----------------------------
 # Request Model
 # -----------------------------
@@ -57,12 +58,12 @@ async def transform_text(request: TextRequest):
 
     try:
         print("\n--- NEW REQUEST ---")
-        print("Incoming classroom code:", request.classroom_code)
+        print("Raw classroom code:", request.classroom_code)
 
         classroom = None
 
         # -----------------------------
-        # DEBUG: Get ALL rows first
+        # Fetch all rows for debug
         # -----------------------------
         all_rows = supabase.table("classrooms").select("*").execute()
         print("DEBUG ALL ROWS:", all_rows.data)
@@ -71,19 +72,23 @@ async def transform_text(request: TextRequest):
             return {"error": "No rows exist in classrooms table."}
 
         # -----------------------------
-        # Find matching classroom manually
+        # Normalize incoming code
         # -----------------------------
+        incoming_code = (request.classroom_code or "").strip().upper()
+        print("Normalized incoming code:", incoming_code)
+
         match = None
+
         for row in all_rows.data:
-            print("Checking row code:", row.get("code"))
-            if row.get("code") == request.classroom_code:
+            db_code = (row.get("code") or "").strip().upper()
+            print("Checking DB code:", db_code)
+
+            if db_code == incoming_code:
                 match = row
                 break
 
         if not match:
-            return {
-                "error": f"No match found for code: {request.classroom_code}"
-            }
+            return {"error": f"No match found for code: {incoming_code}"}
 
         classroom = match
         print("MATCH FOUND:", classroom)
@@ -91,13 +96,15 @@ async def transform_text(request: TextRequest):
         # -----------------------------
         # Governance Enforcement
         # -----------------------------
-        if request.mode not in classroom["allowed_modes"]:
+        allowed_modes = classroom.get("allowed_modes") or []
+
+        if request.mode not in allowed_modes:
             return {"error": "This mode is not allowed in this classroom."}
 
-        if request.mode == "custom" and not classroom["allow_custom"]:
+        if request.mode == "custom" and not classroom.get("allow_custom"):
             return {"error": "Custom prompts are not allowed in this classroom."}
 
-        if classroom["locked_lexile"]:
+        if classroom.get("locked_lexile"):
             request.level = classroom["locked_lexile"]
 
         # -----------------------------
@@ -120,6 +127,21 @@ async def transform_text(request: TextRequest):
                 request.level,
                 lexile_prompts["elementary"]
             )
+
+        elif request.mode == "study_guide":
+            system_prompt = "Turn this into a structured study guide with headings and bullet points."
+
+        elif request.mode == "quiz":
+            system_prompt = "Create 5 multiple choice quiz questions with answer key."
+
+        elif request.mode == "vocabulary":
+            system_prompt = "Extract 5 academic vocabulary words and define them clearly."
+
+        elif request.mode == "discussion":
+            system_prompt = "Create 5 thoughtful discussion questions."
+
+        elif request.mode == "cornell":
+            system_prompt = "Rewrite this into Cornell Notes format."
 
         else:
             system_prompt = "Rewrite clearly."

@@ -7,6 +7,9 @@ import os
 
 app = FastAPI()
 
+# -----------------------------
+# CORS (Allow extension access)
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,7 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔐 ENV VARIABLES
+# -----------------------------
+# ENV VARIABLES
+# -----------------------------
 OPENAI_KEY = os.environ["OPENAI_API_KEY"]
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
@@ -24,6 +29,9 @@ client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+# -----------------------------
+# Request Model
+# -----------------------------
 class TextRequest(BaseModel):
     text: str
     mode: str = "simplify"
@@ -32,54 +40,83 @@ class TextRequest(BaseModel):
     classroom_code: str | None = None
 
 
+# -----------------------------
+# Health Check Route
+# -----------------------------
+@app.get("/")
+def health():
+    return {"status": "Backend running"}
+
+
+# -----------------------------
+# Main Transform Route
+# -----------------------------
 @app.post("/transform")
 async def transform_text(request: TextRequest):
     try:
 
-        # 🔎 FETCH CLASSROOM FROM SUPABASE
+        classroom = None
+
+        # -----------------------------------
+        # FETCH CLASSROOM RULES (If Provided)
+        # -----------------------------------
         if request.classroom_code:
+
             response = supabase.table("classrooms") \
                 .select("*") \
                 .eq("code", request.classroom_code) \
                 .execute()
 
-            if response.data:
-                classroom = response.data[0]
+            if not response.data:
+                return {"error": "Invalid classroom code."}
 
-                # 🔐 Enforce locked lexile
-                if classroom["locked_lexile"]:
-                    request.level = classroom["locked_lexile"]
+            classroom = response.data[0]
 
-                # 🔐 Enforce allowed modes
-                if request.mode not in classroom["allowed_modes"]:
-                    return {"error": "This mode is not allowed in this classroom."}
+            # -----------------------------
+            # ENFORCEMENT RULES
+            # -----------------------------
 
-                # 🔐 Enforce custom restriction
-                if not classroom["allow_custom"]:
-                    request.custom_prompt = None
+            # 1️⃣ Enforce allowed modes
+            if request.mode not in classroom["allowed_modes"]:
+                return {"error": "This mode is not allowed in this classroom."}
 
-        # ---------------------------
+            # 2️⃣ Enforce custom prompt restriction
+            if request.mode == "custom" and not classroom["allow_custom"]:
+                return {"error": "Custom prompts are not allowed in this classroom."}
+
+            # 3️⃣ Enforce locked lexile
+            if classroom["locked_lexile"]:
+                request.level = classroom["locked_lexile"]
+
+        # -----------------------------------
         # PROMPT GENERATION LOGIC
-        # ---------------------------
+        # -----------------------------------
 
-        if request.mode == "custom" and request.custom_prompt:
+        system_prompt = None
+
+        if request.mode == "custom":
+            if not request.custom_prompt:
+                return {"error": "No custom prompt provided."}
             system_prompt = request.custom_prompt
 
         elif request.mode == "simplify":
             lexile_prompts = {
-                "early": "Rewrite at Lexile BR–400L.",
-                "elementary": "Rewrite at 400L–800L.",
-                "middle": "Rewrite at 800L–1100L.",
-                "high": "Rewrite at 1100L–1300L.",
-                "advanced": "Rewrite at 1300L–1600L."
+                "early": "Rewrite at Lexile BR–400L level using very simple vocabulary.",
+                "elementary": "Rewrite at 400L–800L Lexile level for elementary students.",
+                "middle": "Rewrite at 800L–1100L Lexile level for middle school students.",
+                "high": "Rewrite at 1100L–1300L Lexile level for high school students.",
+                "advanced": "Rewrite at 1300L–1600L Lexile level with academic precision."
             }
-            system_prompt = lexile_prompts.get(request.level, lexile_prompts["elementary"])
+            system_prompt = lexile_prompts.get(
+                request.level,
+                lexile_prompts["elementary"]
+            )
 
         elif request.mode == "study_guide":
             system_prompt = "Turn this into a structured study guide with headings and bullet points."
 
         elif request.mode == "quiz":
-            system_prompt = "Create 5 multiple choice quiz questions with an answer key."
+            system_prompt = "Create 5 multiple choice quiz questions with answer key."
 
         elif request.mode == "vocabulary":
             system_prompt = "Extract 5 academic vocabulary words and define them clearly."
@@ -102,6 +139,9 @@ async def transform_text(request: TextRequest):
         else:
             system_prompt = "Rewrite clearly."
 
+        # -----------------------------------
+        # CALL OPENAI
+        # -----------------------------------
         ai_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[

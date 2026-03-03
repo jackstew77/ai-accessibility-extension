@@ -8,7 +8,7 @@ import os
 app = FastAPI()
 
 # -----------------------------
-# CORS (Allow extension access)
+# CORS
 # -----------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -25,9 +25,10 @@ OPENAI_KEY = os.environ["OPENAI_API_KEY"]
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
+print("DEBUG SUPABASE URL:", SUPABASE_URL)
+
 client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 # -----------------------------
 # Request Model
@@ -41,7 +42,7 @@ class TextRequest(BaseModel):
 
 
 # -----------------------------
-# Health Check Route
+# Health Check
 # -----------------------------
 @app.get("/")
 def health():
@@ -49,51 +50,59 @@ def health():
 
 
 # -----------------------------
-# Main Transform Route
+# Transform Route
 # -----------------------------
 @app.post("/transform")
 async def transform_text(request: TextRequest):
+
     try:
+        print("\n--- NEW REQUEST ---")
+        print("Incoming classroom code:", request.classroom_code)
 
         classroom = None
 
-        # -----------------------------------
-        # FETCH CLASSROOM RULES (If Provided)
-        # -----------------------------------
-        if request.classroom_code:
+        # -----------------------------
+        # DEBUG: Get ALL rows first
+        # -----------------------------
+        all_rows = supabase.table("classrooms").select("*").execute()
+        print("DEBUG ALL ROWS:", all_rows.data)
 
-            response = supabase.table("classrooms") \
-                .select("*") \
-                .eq("code", request.classroom_code) \
-                .execute()
+        if not all_rows.data:
+            return {"error": "No rows exist in classrooms table."}
 
-            if not response.data:
-                return {"error": "Invalid classroom code."}
+        # -----------------------------
+        # Find matching classroom manually
+        # -----------------------------
+        match = None
+        for row in all_rows.data:
+            print("Checking row code:", row.get("code"))
+            if row.get("code") == request.classroom_code:
+                match = row
+                break
 
-            classroom = response.data[0]
+        if not match:
+            return {
+                "error": f"No match found for code: {request.classroom_code}"
+            }
 
-            # -----------------------------
-            # ENFORCEMENT RULES
-            # -----------------------------
+        classroom = match
+        print("MATCH FOUND:", classroom)
 
-            # 1️⃣ Enforce allowed modes
-            if request.mode not in classroom["allowed_modes"]:
-                return {"error": "This mode is not allowed in this classroom."}
+        # -----------------------------
+        # Governance Enforcement
+        # -----------------------------
+        if request.mode not in classroom["allowed_modes"]:
+            return {"error": "This mode is not allowed in this classroom."}
 
-            # 2️⃣ Enforce custom prompt restriction
-            if request.mode == "custom" and not classroom["allow_custom"]:
-                return {"error": "Custom prompts are not allowed in this classroom."}
+        if request.mode == "custom" and not classroom["allow_custom"]:
+            return {"error": "Custom prompts are not allowed in this classroom."}
 
-            # 3️⃣ Enforce locked lexile
-            if classroom["locked_lexile"]:
-                request.level = classroom["locked_lexile"]
+        if classroom["locked_lexile"]:
+            request.level = classroom["locked_lexile"]
 
-        # -----------------------------------
-        # PROMPT GENERATION LOGIC
-        # -----------------------------------
-
-        system_prompt = None
-
+        # -----------------------------
+        # Prompt Logic
+        # -----------------------------
         if request.mode == "custom":
             if not request.custom_prompt:
                 return {"error": "No custom prompt provided."}
@@ -101,47 +110,23 @@ async def transform_text(request: TextRequest):
 
         elif request.mode == "simplify":
             lexile_prompts = {
-                "early": "Rewrite at Lexile BR–400L level using very simple vocabulary.",
-                "elementary": "Rewrite at 400L–800L Lexile level for elementary students.",
-                "middle": "Rewrite at 800L–1100L Lexile level for middle school students.",
-                "high": "Rewrite at 1100L–1300L Lexile level for high school students.",
-                "advanced": "Rewrite at 1300L–1600L Lexile level with academic precision."
+                "early": "Rewrite at Lexile BR–400L level.",
+                "elementary": "Rewrite at 400L–800L level.",
+                "middle": "Rewrite at 800L–1100L level.",
+                "high": "Rewrite at 1100L–1300L level.",
+                "advanced": "Rewrite at 1300L–1600L level."
             }
             system_prompt = lexile_prompts.get(
                 request.level,
                 lexile_prompts["elementary"]
             )
 
-        elif request.mode == "study_guide":
-            system_prompt = "Turn this into a structured study guide with headings and bullet points."
-
-        elif request.mode == "quiz":
-            system_prompt = "Create 5 multiple choice quiz questions with answer key."
-
-        elif request.mode == "vocabulary":
-            system_prompt = "Extract 5 academic vocabulary words and define them clearly."
-
-        elif request.mode == "discussion":
-            system_prompt = "Create 5 thoughtful discussion questions."
-
-        elif request.mode == "cornell":
-            system_prompt = "Rewrite this into Cornell Notes format."
-
-        elif request.mode == "summarize":
-            system_prompt = "Summarize clearly for students."
-
-        elif request.mode == "explain":
-            system_prompt = "Explain clearly in student-friendly language."
-
-        elif request.mode == "translate":
-            system_prompt = "Translate this into Spanish."
-
         else:
             system_prompt = "Rewrite clearly."
 
-        # -----------------------------------
-        # CALL OPENAI
-        # -----------------------------------
+        # -----------------------------
+        # Call OpenAI
+        # -----------------------------
         ai_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -153,4 +138,5 @@ async def transform_text(request: TextRequest):
         return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
+        print("SERVER ERROR:", str(e))
         return {"error": str(e)}

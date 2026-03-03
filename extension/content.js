@@ -3,6 +3,7 @@
 // ==============================
 let CLASSROOM_CODE = null;
 
+// Load saved classroom code
 chrome.storage.local.get(["classroomCode"], function(result) {
   if (result.classroomCode) {
     CLASSROOM_CODE = result.classroomCode;
@@ -17,6 +18,7 @@ document.addEventListener("keydown", async (event) => {
 
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
+
   if (!selectedText || selectedText.length < 5) return;
 
   const range = selection.getRangeAt(0);
@@ -27,10 +29,12 @@ document.addEventListener("keydown", async (event) => {
 // 🎓 MAIN MODAL
 // ==============================
 function showMainOverlay(selectedText, range) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
+
   overlay.style = `
     position: fixed;
     top: 50%;
@@ -56,6 +60,7 @@ function showMainOverlay(selectedText, range) {
         type="text"
         placeholder="Enter classroom code"
         style="width:100%; padding:8px; margin-top:6px;">
+
       <button id="save-classroom"
         style="margin-top:8px; padding:6px 10px; cursor:pointer;">
         Save Code
@@ -106,6 +111,7 @@ function showMainOverlay(selectedText, range) {
         cursor:pointer;">
         Apply
       </button>
+
       <button id="cancel-btn" style="
         background:#e6eef8;
         color:#2c6ecb;
@@ -122,10 +128,14 @@ function showMainOverlay(selectedText, range) {
   document.body.appendChild(overlay);
 
   const classroomInput = document.getElementById("classroom-input");
-  if (CLASSROOM_CODE) classroomInput.value = CLASSROOM_CODE;
+
+  if (CLASSROOM_CODE) {
+    classroomInput.value = CLASSROOM_CODE;
+  }
 
   document.getElementById("save-classroom").onclick = () => {
     const value = classroomInput.value.trim();
+
     chrome.storage.local.set({ classroomCode: value }, function() {
       CLASSROOM_CODE = value;
       alert("Classroom code saved.");
@@ -137,80 +147,98 @@ function showMainOverlay(selectedText, range) {
   const lexileContainer = document.getElementById("lexile-container");
 
   modeSelect.addEventListener("change", () => {
+
     customContainer.style.display =
       modeSelect.value === "custom" ? "block" : "none";
+
     lexileContainer.style.display =
       modeSelect.value === "simplify" ? "block" : "none";
   });
 
   document.getElementById("cancel-btn").onclick = () => removeOverlay();
 
+  // ==============================
+  // APPLY BUTTON (FIXED VERSION)
+  // ==============================
   document.getElementById("apply-btn").onclick = async () => {
-    const mode = modeSelect.value;
 
-    if (mode === "read") {
-      showLanguageSelector(selectedText);
-      return;
-    }
+    chrome.storage.local.get(["classroomCode"], async function(result) {
 
-    overlay.innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        Processing...
-      </div>
-    `;
+      const savedCode = result.classroomCode || null;
+      const mode = modeSelect.value;
 
-    try {
-      const response = await fetch(
-        "https://ai-accessibility-extension.onrender.com/transform",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: selectedText,
-            mode: mode,
-            level: document.getElementById("level-select")?.value,
-            custom_prompt:
-              mode === "custom"
-                ? document.getElementById("custom-prompt").value
-                : null,
-            classroom_code: CLASSROOM_CODE
-          })
+      if (mode === "read") {
+        showLanguageSelector(selectedText);
+        return;
+      }
+
+      overlay.innerHTML = `
+        <div style="text-align:center; padding:20px;">
+          Processing...
+        </div>
+      `;
+
+      try {
+
+        const response = await fetch(
+          "https://ai-accessibility-extension.onrender.com/transform",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: selectedText,
+              mode: mode,
+              level: document.getElementById("level-select")?.value,
+              custom_prompt:
+                mode === "custom"
+                  ? document.getElementById("custom-prompt").value
+                  : null,
+              classroom_code: savedCode
+            })
+          }
+        );
+
+        if (!response.ok) {
+          showResultOverlay("❌ Server error. Please try again.", range);
+          return;
         }
-      );
 
-      if (!response.ok) {
-        showResultOverlay("❌ Server error. Please try again.", range);
-        return;
+        const data = await response.json();
+
+        if (data.error) {
+          showResultOverlay("❌ " + data.error, range);
+          return;
+        }
+
+        if (!data.output) {
+          showResultOverlay("❌ Unexpected server response.", range);
+          return;
+        }
+
+        showResultOverlay(data.output, range);
+
+      } catch (err) {
+
+        showResultOverlay("❌ Connection failed.", range);
+
       }
 
-      const data = await response.json();
+    });
 
-      if (data.error) {
-        showResultOverlay("❌ " + data.error, range);
-        return;
-      }
-
-      if (!data.output) {
-        showResultOverlay("❌ Unexpected server response.", range);
-        return;
-      }
-
-      showResultOverlay(data.output, range);
-
-    } catch (err) {
-      showResultOverlay("❌ Connection failed.", range);
-    }
   };
+
 }
 
 // ==============================
-// 📄 RESULT MODAL
+// RESULT MODAL
 // ==============================
 function showResultOverlay(text, range) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
+
   overlay.style = `
     position: fixed;
     top: 50%;
@@ -229,8 +257,10 @@ function showResultOverlay(text, range) {
     <div style="max-height:320px; overflow:auto; margin-bottom:18px;">
       ${text}
     </div>
+
     <div style="text-align:right;">
-      <button id="replace-btn" style="
+      <button id="replace-btn"
+        style="
         background:#2c6ecb;
         color:white;
         border:none;
@@ -239,7 +269,9 @@ function showResultOverlay(text, range) {
         cursor:pointer;">
         Replace
       </button>
-      <button id="close-btn" style="
+
+      <button id="close-btn"
+        style="
         background:#e6eef8;
         color:#2c6ecb;
         border:none;
@@ -267,10 +299,12 @@ function showResultOverlay(text, range) {
 // 🔊 LANGUAGE SELECTOR
 // ==============================
 function showLanguageSelector(text) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
+
   overlay.style = `
     position: fixed;
     top: 50%;
@@ -291,6 +325,7 @@ function showLanguageSelector(text) {
       <option value="fr-FR">French</option>
       <option value="de-DE">German</option>
     </select>
+
     <button id="speak-btn" style="width:100%; padding:8px;">
       Start Reading
     </button>
@@ -299,7 +334,12 @@ function showLanguageSelector(text) {
   document.body.appendChild(overlay);
 
   document.getElementById("speak-btn").onclick = () => {
-    speakText(text, document.getElementById("voice-language").value);
+
+    speakText(
+      text,
+      document.getElementById("voice-language").value
+    );
+
     removeOverlay();
   };
 }
@@ -308,8 +348,10 @@ function showLanguageSelector(text) {
 // 🎙 SPEECH FUNCTION
 // ==============================
 function speakText(text, language = "en-US") {
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = language;
+
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
@@ -318,6 +360,9 @@ function speakText(text, language = "en-US") {
 // 🧹 CLEANUP
 // ==============================
 function removeOverlay() {
+
   const existing = document.getElementById("ai-overlay");
+
   if (existing) existing.remove();
+
 }

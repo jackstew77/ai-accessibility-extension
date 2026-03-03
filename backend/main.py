@@ -97,13 +97,12 @@ async def transform_text(request: TextRequest):
         # -----------------------------
         allowed_modes = classroom.get("allowed_modes") or []
 
-        # 🔧 FIXED: Check custom permission first
-        if request.mode == "custom":
-            if not classroom.get("allow_custom"):
-                return {"error": "Custom prompts are not allowed in this classroom."}
-
-        if request.mode not in allowed_modes and request.mode != "custom":
+        if request.mode not in allowed_modes:
             return {"error": "This mode is not allowed in this classroom."}
+
+        # ✅ FIXED LINE
+        if request.mode == "custom" and not classroom.get("allowed_custom"):
+            return {"error": "Custom prompts are not allowed in this classroom."}
 
         if classroom.get("locked_lexile"):
             request.level = classroom["locked_lexile"]

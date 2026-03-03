@@ -4,8 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from supabase import create_client
 import os
-import random
-import string
 
 app = FastAPI()
 
@@ -33,7 +31,7 @@ client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -----------------------------
-# Request Models
+# Request Model
 # -----------------------------
 class TextRequest(BaseModel):
     text: str
@@ -42,13 +40,14 @@ class TextRequest(BaseModel):
     custom_prompt: str | None = None
     classroom_code: str | None = None
 
-
+# -----------------------------
+# Classroom Creation Model
+# -----------------------------
 class ClassroomCreate(BaseModel):
     class_name: str
-    allowed_modes: list
+    allowed_modes: list[str]
     locked_lexile: str | None = None
     allowed_custom: bool = False
-
 
 # -----------------------------
 # Health Check
@@ -57,49 +56,44 @@ class ClassroomCreate(BaseModel):
 def health():
     return {"status": "Backend running"}
 
-
 # -----------------------------
-# Generate Classroom Code
-# -----------------------------
-def generate_code(prefix):
-
-    letters = ''.join(random.choices(string.ascii_uppercase, k=1))
-    numbers = ''.join(random.choices(string.digits, k=1))
-    random_block = ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
-
-    return f"{prefix[:6].upper()}-{letters}{numbers}{random_block}"
-
-
-# -----------------------------
-# Create Classroom (Phase 3)
+# Create Classroom
 # -----------------------------
 @app.post("/create_classroom")
-def create_classroom(data: ClassroomCreate):
+def create_classroom(request: ClassroomCreate):
+    import random
+    import string
 
-    prefix = data.class_name.replace(" ", "").upper()
+    prefix = request.class_name[:6].upper()
+    suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    code = f"{prefix}-{suffix}"
 
-    code = generate_code(prefix)
-
-    insert = supabase.table("classrooms").insert({
-
+    supabase.table("classrooms").insert({
         "code": code,
-        "locked_lexile": data.locked_lexile,
-        "allowed_modes": data.allowed_modes,
-        "allowed_custom": data.allowed_custom
-
+        "locked_lexile": request.locked_lexile,
+        "allowed_modes": request.allowed_modes,
+        "allowed_custom": request.allowed_custom
     }).execute()
 
-    return {
-        "code": code
-    }
+    return {"code": code}
 
+# -----------------------------
+# Get All Classrooms
+# -----------------------------
+@app.get("/classrooms")
+def get_classrooms():
+    try:
+        response = supabase.table("classrooms").select("*").execute()
+        return response.data
+    except Exception as e:
+        print("SERVER ERROR:", str(e))
+        return {"error": str(e)}
 
 # -----------------------------
 # Transform Route
 # -----------------------------
 @app.post("/transform")
 async def transform_text(request: TextRequest):
-
     try:
 
         print("\n--- NEW REQUEST ---")
@@ -107,19 +101,24 @@ async def transform_text(request: TextRequest):
 
         classroom = None
 
+        # -----------------------------
+        # Fetch all rows for debug
+        # -----------------------------
         all_rows = supabase.table("classrooms").select("*").execute()
         print("DEBUG ALL ROWS:", all_rows.data)
 
         if not all_rows.data:
             return {"error": "No rows exist in classrooms table."}
 
+        # -----------------------------
+        # Normalize incoming code
+        # -----------------------------
         incoming_code = (request.classroom_code or "").strip().upper()
         print("Normalized incoming code:", incoming_code)
 
         match = None
 
         for row in all_rows.data:
-
             db_code = (row.get("code") or "").strip().upper()
             print("Checking DB code:", db_code)
 
@@ -131,8 +130,12 @@ async def transform_text(request: TextRequest):
             return {"error": f"No match found for code: {incoming_code}"}
 
         classroom = match
+
         print("MATCH FOUND:", classroom)
 
+        # -----------------------------
+        # Governance Enforcement
+        # -----------------------------
         allowed_modes = classroom.get("allowed_modes") or []
 
         if request.mode not in allowed_modes:
@@ -187,6 +190,9 @@ async def transform_text(request: TextRequest):
         else:
             system_prompt = "Rewrite clearly."
 
+        # -----------------------------
+        # Call OpenAI
+        # -----------------------------
         ai_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -198,6 +204,5 @@ async def transform_text(request: TextRequest):
         return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
-
         print("SERVER ERROR:", str(e))
         return {"error": str(e)}

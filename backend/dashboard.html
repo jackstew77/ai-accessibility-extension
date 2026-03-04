@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Teacher Dashboard</title>
+<title>Teacher Classroom Dashboard</title>
 
 <style>
 
@@ -91,10 +91,23 @@ gap:8px;
 white-space:nowrap;
 }
 
+.modal{
+display:none;
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,0.25);
+width:420px;
+z-index:1000;
+}
+
 </style>
 
 </head>
-
 
 <body>
 
@@ -124,27 +137,17 @@ white-space:nowrap;
 
 <h4>Allowed AI Tools</h4>
 
-
 <div class="mode-grid">
 
 <label>Simplify <input type="checkbox" value="simplify" checked></label>
-
 <label>Study Guide <input type="checkbox" value="study_guide"></label>
-
 <label>Quiz <input type="checkbox" value="quiz"></label>
-
 <label>Vocabulary <input type="checkbox" value="vocabulary"></label>
-
 <label>Discussion <input type="checkbox" value="discussion"></label>
-
 <label>Cornell Notes <input type="checkbox" value="cornell"></label>
-
 <label>Summarize <input type="checkbox" value="summarize"></label>
-
 <label>Explain <input type="checkbox" value="explain"></label>
-
 <label>Translate <input type="checkbox" value="translate"></label>
-
 <label>Read Aloud <input type="checkbox" value="read"></label>
 
 </div>
@@ -185,9 +188,62 @@ Allow Custom Prompts
 </div>
 
 
+<!-- EDIT MODAL -->
+
+<div id="editModal" class="modal">
+
+<h3>Edit Classroom</h3>
+
+<label>Locked Lexile</label>
+
+<select id="editLexile">
+
+<option value="">No Locked Lexile</option>
+<option value="early">Early</option>
+<option value="elementary">Elementary</option>
+<option value="middle">Middle</option>
+<option value="high">High</option>
+<option value="advanced">Advanced</option>
+
+</select>
+
+
+<h4>Allowed AI Tools</h4>
+
+<div id="editModes" class="mode-grid">
+
+<label>Simplify <input type="checkbox" value="simplify"></label>
+<label>Study Guide <input type="checkbox" value="study_guide"></label>
+<label>Quiz <input type="checkbox" value="quiz"></label>
+<label>Vocabulary <input type="checkbox" value="vocabulary"></label>
+<label>Discussion <input type="checkbox" value="discussion"></label>
+<label>Cornell Notes <input type="checkbox" value="cornell"></label>
+<label>Summarize <input type="checkbox" value="summarize"></label>
+<label>Explain <input type="checkbox" value="explain"></label>
+<label>Translate <input type="checkbox" value="translate"></label>
+<label>Read Aloud <input type="checkbox" value="read"></label>
+
+</div>
+
+
+<label class="custom-label">
+<input type="checkbox" id="editCustom">
+Allow Custom Prompts
+</label>
+
+<br><br>
+
+<button onclick="saveEdit()">Save Changes</button>
+<button onclick="closeEdit()">Cancel</button>
+
+</div>
+
+
 <script>
 
 const API = "https://ai-accessibility-extension.onrender.com"
+
+let editingCode = null
 
 
 async function createClass(){
@@ -224,58 +280,7 @@ allowed_custom:custom
 const data = await response.json()
 
 alert("Classroom Code: " + data.code)
-let editingCode = null
 
-function editClass(code){
-
-editingCode = code
-
-document.getElementById("editModal").style.display = "block"
-
-}
-
-function closeEdit(){
-
-document.getElementById("editModal").style.display = "none"
-
-}
-
-function saveEdit(){
-
-const lexile = document.getElementById("editLexile").value
-const custom = document.getElementById("editCustom").checked
-
-const modes = []
-
-document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
-if(cb.checked){
-modes.push(cb.value)
-}
-})
-
-fetch(API + "/update_classroom",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-code:editingCode,
-allowed_modes:modes,
-locked_lexile:lexile,
-allowed_custom:custom
-})
-
-})
-.then(()=>{
-alert("Classroom updated")
-closeEdit()
-loadClasses()
-})
-
-}
 loadClasses()
 
 }
@@ -313,13 +318,28 @@ loadClasses()
 
 function editClass(code){
 
-const newLexile = prompt("Enter new locked lexile (early, elementary, middle, high, advanced or leave blank)")
+editingCode = code
 
-const customAllowed = confirm("Allow custom prompts?")
+document.getElementById("editModal").style.display = "block"
+
+}
+
+
+function closeEdit(){
+
+document.getElementById("editModal").style.display = "none"
+
+}
+
+
+function saveEdit(){
+
+const lexile = document.getElementById("editLexile").value
+const custom = document.getElementById("editCustom").checked
 
 const modes = []
 
-document.querySelectorAll('.mode-grid input[type="checkbox"]').forEach(cb=>{
+document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
 if(cb.checked){
 modes.push(cb.value)
 }
@@ -334,17 +354,18 @@ headers:{
 },
 
 body:JSON.stringify({
-code:code,
+code:editingCode,
 allowed_modes:modes,
-locked_lexile:newLexile,
-allowed_custom:customAllowed
+locked_lexile:lexile,
+allowed_custom:custom
 })
 
 })
-
 .then(()=>{
 
 alert("Classroom updated")
+
+closeEdit()
 
 loadClasses()
 
@@ -394,63 +415,6 @@ table.innerHTML += `
 loadClasses()
 
 </script>
-<div id="editModal" style="
-display:none;
-position:fixed;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:white;
-padding:25px;
-border-radius:12px;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-width:420px;
-z-index:1000;
-">
 
-<h3>Edit Classroom</h3>
-
-<label>Locked Lexile</label>
-
-<select id="editLexile">
-
-<option value="">No Locked Lexile</option>
-<option value="early">Early</option>
-<option value="elementary">Elementary</option>
-<option value="middle">Middle</option>
-<option value="high">High</option>
-<option value="advanced">Advanced</option>
-
-</select>
-
-<h4>Allowed AI Tools</h4>
-
-<div id="editModes" class="mode-grid">
-
-<label>Simplify <input type="checkbox" value="simplify"></label>
-<label>Study Guide <input type="checkbox" value="study_guide"></label>
-<label>Quiz <input type="checkbox" value="quiz"></label>
-<label>Vocabulary <input type="checkbox" value="vocabulary"></label>
-<label>Discussion <input type="checkbox" value="discussion"></label>
-<label>Cornell Notes <input type="checkbox" value="cornell"></label>
-<label>Summarize <input type="checkbox" value="summarize"></label>
-<label>Explain <input type="checkbox" value="explain"></label>
-<label>Translate <input type="checkbox" value="translate"></label>
-<label>Read Aloud <input type="checkbox" value="read"></label>
-
-</div>
-
-<label class="custom-label">
-<input type="checkbox" id="editCustom">
-Allow Custom Prompts
-</label>
-
-<br><br>
-
-<button onclick="saveEdit()">Save Changes</button>
-<button onclick="closeEdit()">Cancel</button>
-
-</div>
 </body>
-
 </html>

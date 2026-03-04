@@ -1,29 +1,17 @@
 // ==============================
-// ClariFi Academic Tools — content.js
+// 🚀 PHASE 2 – DYNAMIC CLASSROOM VERSION
 // ==============================
-
-// -----------------------------
-// CONFIG — update these values
-// Get your API_SECRET from your Render environment variables
-// -----------------------------
-const CONFIG = {
-  BACKEND_URL: "https://ai-accessibility-extension.onrender.com",
-  API_SECRET: "a1f19272fe7d80f798dc05b471d6035d",
-};
-
-// -----------------------------
-// Load saved classroom code on startup
-// -----------------------------
 let CLASSROOM_CODE = null;
 
-chrome.storage.local.get(["classroomCode"], function (result) {
+// Load saved classroom code
+chrome.storage.local.get(["classroomCode"], function(result) {
   if (result.classroomCode) {
     CLASSROOM_CODE = result.classroomCode;
   }
 });
 
 // ==============================
-// HOTKEY (Ctrl + Shift + L)
+// 🔥 HOTKEY (Ctrl + Shift + L)
 // ==============================
 document.addEventListener("keydown", async (event) => {
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
@@ -38,15 +26,16 @@ document.addEventListener("keydown", async (event) => {
 });
 
 // ==============================
-// MAIN MODAL
+// 🎓 MAIN MODAL
 // ==============================
 function showMainOverlay(selectedText, range) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
-  overlay.style.cssText = `
+  overlay.style = `
     position: fixed;
     top: 50%;
     left: 50%;
@@ -56,7 +45,7 @@ function showMainOverlay(selectedText, range) {
     padding: 24px;
     border-radius: 16px;
     box-shadow: 0 12px 35px rgba(0,0,0,0.15);
-    z-index: 2147483647;
+    z-index: 9999;
     font-family: Arial, sans-serif;
   `;
 
@@ -67,18 +56,19 @@ function showMainOverlay(selectedText, range) {
 
     <div style="margin-bottom:16px;">
       <label style="font-weight:500;">Classroom Code:</label>
-      <input id="clarifi-classroom-input"
+      <input id="classroom-input"
         type="text"
         placeholder="Enter classroom code"
-        style="width:100%; padding:8px; margin-top:6px; box-sizing:border-box;">
-      <button id="clarifi-save-classroom"
+        style="width:100%; padding:8px; margin-top:6px;">
+
+      <button id="save-classroom"
         style="margin-top:8px; padding:6px 10px; cursor:pointer;">
         Save Code
       </button>
     </div>
 
     <label style="font-weight:500;">Mode:</label>
-    <select id="clarifi-mode-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
+    <select id="mode-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
       <option value="simplify">Simplify (Lexile)</option>
       <option value="study_guide">Create Study Guide</option>
       <option value="quiz">Generate Quiz</option>
@@ -92,9 +82,9 @@ function showMainOverlay(selectedText, range) {
       <option value="read">🔊 Read Aloud</option>
     </select>
 
-    <div id="clarifi-lexile-container">
+    <div id="lexile-container">
       <label style="font-weight:500;">Lexile Level:</label>
-      <select id="clarifi-level-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
+      <select id="level-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
         <option value="early">Early Reader (BR–400L)</option>
         <option value="elementary">Elementary (400L–800L)</option>
         <option value="middle" selected>Middle School (800L–1100L)</option>
@@ -103,16 +93,16 @@ function showMainOverlay(selectedText, range) {
       </select>
     </div>
 
-    <div id="clarifi-custom-container" style="display:none;">
-      <textarea id="clarifi-custom-prompt"
+    <div id="custom-container" style="display:none;">
+      <textarea id="custom-prompt"
         rows="3"
-        style="width:100%; padding:10px; margin-bottom:16px; box-sizing:border-box;"
+        style="width:100%; padding:10px; margin-bottom:16px;"
         placeholder="Enter your custom instruction...">
       </textarea>
     </div>
 
     <div style="text-align:right;">
-      <button id="clarifi-apply-btn" style="
+      <button id="apply-btn" style="
         background:#2c6ecb;
         color:white;
         border:none;
@@ -121,7 +111,8 @@ function showMainOverlay(selectedText, range) {
         cursor:pointer;">
         Apply
       </button>
-      <button id="clarifi-cancel-btn" style="
+
+      <button id="cancel-btn" style="
         background:#e6eef8;
         color:#2c6ecb;
         border:none;
@@ -136,77 +127,76 @@ function showMainOverlay(selectedText, range) {
 
   document.body.appendChild(overlay);
 
-  // Populate saved classroom code
-  const classroomInput = document.getElementById("clarifi-classroom-input");
+  const classroomInput = document.getElementById("classroom-input");
+
   if (CLASSROOM_CODE) {
     classroomInput.value = CLASSROOM_CODE;
   }
 
-  // Save classroom code button
-  document.getElementById("clarifi-save-classroom").onclick = () => {
-    const value = classroomInput.value.trim().toUpperCase();
-    chrome.storage.local.set({ classroomCode: value }, function () {
+  document.getElementById("save-classroom").onclick = () => {
+    const value = classroomInput.value.trim();
+
+    chrome.storage.local.set({ classroomCode: value }, function() {
       CLASSROOM_CODE = value;
       alert("Classroom code saved.");
     });
   };
 
-  // Show/hide Lexile and custom prompt sections based on mode
-  const modeSelect = document.getElementById("clarifi-mode-select");
-  const customContainer = document.getElementById("clarifi-custom-container");
-  const lexileContainer = document.getElementById("clarifi-lexile-container");
+  const modeSelect = document.getElementById("mode-select");
+  const customContainer = document.getElementById("custom-container");
+  const lexileContainer = document.getElementById("lexile-container");
 
   modeSelect.addEventListener("change", () => {
-    customContainer.style.display = modeSelect.value === "custom" ? "block" : "none";
-    lexileContainer.style.display  = modeSelect.value === "simplify" ? "block" : "none";
+
+    customContainer.style.display =
+      modeSelect.value === "custom" ? "block" : "none";
+
+    lexileContainer.style.display =
+      modeSelect.value === "simplify" ? "block" : "none";
   });
 
-  document.getElementById("clarifi-cancel-btn").onclick = () => removeOverlay();
+  document.getElementById("cancel-btn").onclick = () => removeOverlay();
 
   // ==============================
-  // APPLY BUTTON
+  // APPLY BUTTON (FIXED VERSION)
   // ==============================
-  document.getElementById("clarifi-apply-btn").onclick = async () => {
-    const mode = modeSelect.value;
+  document.getElementById("apply-btn").onclick = async () => {
 
-    // Read aloud is handled entirely in the browser — no server needed
-    if (mode === "read") {
-      showLanguageSelector(selectedText);
-      return;
-    }
+    chrome.storage.local.get(["classroomCode"], async function(result) {
 
-    chrome.storage.local.get(["classroomCode"], async function (result) {
       const savedCode = result.classroomCode || null;
+      const mode = modeSelect.value;
 
-      // Disable apply button and show loading state
-      const applyBtn = document.getElementById("clarifi-apply-btn");
-      if (applyBtn) {
-        applyBtn.disabled = true;
-        applyBtn.textContent = "Processing...";
-        applyBtn.style.opacity = "0.6";
-        applyBtn.style.cursor = "default";
+      if (mode === "read") {
+        showLanguageSelector(selectedText);
+        return;
       }
 
-      showLoadingOverlay();
+      overlay.innerHTML = `
+        <div style="text-align:center; padding:20px;">
+          Processing...
+        </div>
+      `;
 
       try {
-        const response = await fetch(`${CONFIG.BACKEND_URL}/transform`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": CONFIG.API_SECRET,
-          },
-          body: JSON.stringify({
-            text: selectedText,
-            mode: mode,
-            level: document.getElementById("clarifi-level-select")?.value,
-            custom_prompt:
-              mode === "custom"
-                ? document.getElementById("clarifi-custom-prompt").value
-                : null,
-            classroom_code: savedCode,
-          }),
-        });
+
+        const response = await fetch(
+          "https://ai-accessibility-extension.onrender.com/transform",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: selectedText,
+              mode: mode,
+              level: document.getElementById("level-select")?.value,
+              custom_prompt:
+                mode === "custom"
+                  ? document.getElementById("custom-prompt").value
+                  : null,
+              classroom_code: savedCode
+            })
+          }
+        );
 
         if (!response.ok) {
           showResultOverlay("❌ Server error. Please try again.", range);
@@ -228,68 +218,28 @@ function showMainOverlay(selectedText, range) {
         showResultOverlay(data.output, range);
 
       } catch (err) {
-        showResultOverlay("❌ Connection failed. Is your backend running?", range);
+
+        showResultOverlay("❌ Connection failed.", range);
+
       }
+
     });
+
   };
-}
 
-// ==============================
-// LOADING OVERLAY
-// ==============================
-function showLoadingOverlay() {
-  removeOverlay();
-
-  const overlay = document.createElement("div");
-  overlay.id = "ai-overlay";
-
-  overlay.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    background: white;
-    padding: 36px 24px;
-    border-radius: 16px;
-    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
-    z-index: 2147483647;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  `;
-
-  overlay.innerHTML = `
-    <div style="
-      width: 36px;
-      height: 36px;
-      border: 3px solid #e6eef8;
-      border-top-color: #2c6ecb;
-      border-radius: 50%;
-      animation: clarifi-spin 0.8s linear infinite;
-      margin: 0 auto 16px;
-    "></div>
-    <p style="color:#1f3c88; font-weight:600; margin-bottom:4px;">Transforming with AI</p>
-    <p style="color:#7d8590; font-size:13px;">This usually takes a few seconds…</p>
-    <style>
-      @keyframes clarifi-spin {
-        to { transform: rotate(360deg); }
-      }
-    </style>
-  `;
-
-  document.body.appendChild(overlay);
 }
 
 // ==============================
 // RESULT MODAL
 // ==============================
 function showResultOverlay(text, range) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
-  overlay.style.cssText = `
+  overlay.style = `
     position: fixed;
     top: 50%;
     left: 50%;
@@ -299,70 +249,63 @@ function showResultOverlay(text, range) {
     padding: 24px;
     border-radius: 16px;
     box-shadow: 0 12px 35px rgba(0,0,0,0.2);
-    z-index: 2147483647;
+    z-index: 9999;
     font-family: Arial, sans-serif;
   `;
 
-  // Build the overlay structure without using innerHTML for user content
-  // This prevents XSS if the AI returns any HTML tags
-  const outputDiv = document.createElement("div");
-  outputDiv.style.cssText = "max-height:320px; overflow:auto; margin-bottom:18px; white-space:pre-wrap; line-height:1.6; font-size:14px; color:#1f2937;";
-  outputDiv.textContent = text; // textContent is safe — no HTML execution
+  overlay.innerHTML = `
+    <div style="max-height:320px; overflow:auto; margin-bottom:18px;">
+      ${text}
+    </div>
 
-  const buttonsDiv = document.createElement("div");
-  buttonsDiv.style.textAlign = "right";
+    <div style="text-align:right;">
+      <button id="replace-btn"
+        style="
+        background:#2c6ecb;
+        color:white;
+        border:none;
+        padding:10px 18px;
+        border-radius:8px;
+        cursor:pointer;">
+        Replace
+      </button>
 
-  const replaceBtn = document.createElement("button");
-  replaceBtn.textContent = "Replace";
-  replaceBtn.style.cssText = "background:#2c6ecb; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer;";
-
-  const closeBtn = document.createElement("button");
-  closeBtn.textContent = "Close";
-  closeBtn.style.cssText = "background:#e6eef8; color:#2c6ecb; border:none; padding:10px 18px; border-radius:8px; margin-left:10px; cursor:pointer;";
-
-  // Copy button
-  const copyBtn = document.createElement("button");
-  copyBtn.textContent = "Copy";
-  copyBtn.style.cssText = "background:#f0f4f8; color:#444; border:none; padding:10px 18px; border-radius:8px; margin-left:10px; cursor:pointer;";
-
-  buttonsDiv.appendChild(replaceBtn);
-  buttonsDiv.appendChild(copyBtn);
-  buttonsDiv.appendChild(closeBtn);
-  overlay.appendChild(outputDiv);
-  overlay.appendChild(buttonsDiv);
+      <button id="close-btn"
+        style="
+        background:#e6eef8;
+        color:#2c6ecb;
+        border:none;
+        padding:10px 18px;
+        border-radius:8px;
+        margin-left:10px;
+        cursor:pointer;">
+        Close
+      </button>
+    </div>
+  `;
 
   document.body.appendChild(overlay);
 
-  closeBtn.onclick = () => removeOverlay();
+  document.getElementById("close-btn").onclick = () => removeOverlay();
 
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      copyBtn.textContent = "Copied!";
-      setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
-    });
-  };
-
-  replaceBtn.onclick = () => {
-    try {
-      range.deleteContents();
-      range.insertNode(document.createTextNode(text));
-    } catch (e) {
-      alert("Could not replace text on this page.");
-    }
+  document.getElementById("replace-btn").onclick = () => {
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
     removeOverlay();
   };
 }
 
 // ==============================
-// LANGUAGE SELECTOR (Read Aloud)
+// 🔊 LANGUAGE SELECTOR
 // ==============================
 function showLanguageSelector(text) {
+
   removeOverlay();
 
   const overlay = document.createElement("div");
   overlay.id = "ai-overlay";
 
-  overlay.style.cssText = `
+  overlay.style = `
     position: fixed;
     top: 50%;
     left: 50%;
@@ -372,56 +315,54 @@ function showLanguageSelector(text) {
     padding: 20px;
     border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 2147483647;
-    font-family: Arial, sans-serif;
+    z-index: 9999;
   `;
 
   overlay.innerHTML = `
-    <select id="clarifi-voice-language" style="width:100%; padding:8px; margin-bottom:14px;">
+    <select id="voice-language" style="width:100%; padding:8px; margin-bottom:14px;">
       <option value="en-US">English</option>
       <option value="es-ES">Spanish</option>
       <option value="fr-FR">French</option>
       <option value="de-DE">German</option>
     </select>
-    <button id="clarifi-speak-btn" style="width:100%; padding:8px; cursor:pointer;">
+
+    <button id="speak-btn" style="width:100%; padding:8px;">
       Start Reading
-    </button>
-    <button id="clarifi-stop-btn" style="width:100%; padding:8px; margin-top:8px; cursor:pointer; display:none;">
-      Stop Reading
     </button>
   `;
 
   document.body.appendChild(overlay);
 
-  document.getElementById("clarifi-speak-btn").onclick = () => {
-    const lang = document.getElementById("clarifi-voice-language").value;
-    speakText(text, lang);
-    document.getElementById("clarifi-speak-btn").style.display = "none";
-    document.getElementById("clarifi-stop-btn").style.display = "block";
-  };
+  document.getElementById("speak-btn").onclick = () => {
 
-  document.getElementById("clarifi-stop-btn").onclick = () => {
-    window.speechSynthesis.cancel();
+    speakText(
+      text,
+      document.getElementById("voice-language").value
+    );
+
     removeOverlay();
   };
 }
 
 // ==============================
-// SPEECH FUNCTION
+// 🎙 SPEECH FUNCTION
 // ==============================
 function speakText(text, language = "en-US") {
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = language;
-  utterance.onend = () => removeOverlay();
+
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
 
 // ==============================
-// CLEANUP
+// 🧹 CLEANUP
 // ==============================
 function removeOverlay() {
+
   const existing = document.getElementById("ai-overlay");
+
   if (existing) existing.remove();
-  window.speechSynthesis.cancel();
+
 }

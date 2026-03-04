@@ -49,6 +49,13 @@ padding:10px;
 border-bottom:1px solid #ddd;
 text-align:left;
 }
+
+.mode-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:6px;
+margin-top:10px;
+}
 </style>
 </head>
 
@@ -62,6 +69,7 @@ text-align:left;
 
 <input id="className" placeholder="Class Name">
 
+<label>Locked Lexile</label>
 <select id="lexile">
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
@@ -71,7 +79,20 @@ text-align:left;
 <option value="advanced">Advanced</option>
 </select>
 
-<label>
+<h4>Allowed AI Tools</h4>
+
+<div class="mode-grid">
+
+<label><input type="checkbox" value="simplify" checked> Simplify</label>
+<label><input type="checkbox" value="study_guide"> Study Guide</label>
+<label><input type="checkbox" value="quiz"> Quiz</label>
+<label><input type="checkbox" value="vocabulary"> Vocabulary</label>
+<label><input type="checkbox" value="discussion"> Discussion</label>
+<label><input type="checkbox" value="cornell"> Cornell Notes</label>
+
+</div>
+
+<label style="margin-top:10px;">
 <input type="checkbox" id="allowCustom">
 Allow Custom Prompts
 </label>
@@ -109,6 +130,14 @@ const name = document.getElementById("className").value
 const lexile = document.getElementById("lexile").value
 const custom = document.getElementById("allowCustom").checked
 
+const modes = []
+
+document.querySelectorAll('.mode-grid input[type="checkbox"]').forEach(cb=>{
+if(cb.checked){
+modes.push(cb.value)
+}
+})
+
 const response = await fetch(API + "/create_classroom",{
 method:"POST",
 headers:{
@@ -116,7 +145,7 @@ headers:{
 },
 body:JSON.stringify({
 class_name:name,
-allowed_modes:["simplify","study_guide","quiz","vocabulary"],
+allowed_modes:modes,
 locked_lexile:lexile,
 allowed_custom:custom
 })
@@ -153,7 +182,7 @@ table.innerHTML += `
 <tr>
 <td>${c.class_name}</td>
 <td>${c.code}</td>
-<td>${c.locked_lexile}</td>
+<td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
 </tr>
 `

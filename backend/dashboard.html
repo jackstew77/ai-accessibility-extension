@@ -83,6 +83,7 @@ display:flex;
 align-items:center;
 gap:8px;
 font-size:14px;
+white-space:nowrap;
 }
 
 </style>
@@ -144,22 +145,16 @@ font-size:14px;
 </div>
 
 
-<!-- CUSTOM PROMPT SECTION -->
-
 <div class="custom-section">
 
 <label class="custom-label">
-
 <input type="checkbox" id="allowCustom">
-
 Allow Custom Prompts
-
 </label>
 
 <button onclick="createClass()">Create Classroom</button>
 
 </div>
-
 
 </div>
 
@@ -173,13 +168,11 @@ Allow Custom Prompts
 <table id="classTable">
 
 <tr>
-
 <th>Class Name</th>
 <th>Code</th>
 <th>Locked Lexile</th>
 <th>Allowed Custom</th>
 <th>Actions</th>
-
 </tr>
 
 </table>

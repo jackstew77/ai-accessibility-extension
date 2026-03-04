@@ -71,10 +71,17 @@ margin-top:10px;
 margin-bottom:20px;
 }
 
+/* FIXED CHECKBOX ALIGNMENT */
+
 .mode-grid label{
 display:flex;
-justify-content:space-between;
 align-items:center;
+gap:8px;
+}
+
+.mode-grid input[type="checkbox"]{
+width:16px;
+height:16px;
 }
 
 .custom-section{
@@ -139,16 +146,16 @@ z-index:1000;
 
 <div class="mode-grid">
 
-<label>Simplify <input type="checkbox" value="simplify" checked></label>
-<label>Study Guide <input type="checkbox" value="study_guide"></label>
-<label>Quiz <input type="checkbox" value="quiz"></label>
-<label>Vocabulary <input type="checkbox" value="vocabulary"></label>
-<label>Discussion <input type="checkbox" value="discussion"></label>
-<label>Cornell Notes <input type="checkbox" value="cornell"></label>
-<label>Summarize <input type="checkbox" value="summarize"></label>
-<label>Explain <input type="checkbox" value="explain"></label>
-<label>Translate <input type="checkbox" value="translate"></label>
-<label>Read Aloud <input type="checkbox" value="read"></label>
+<label><input type="checkbox" value="simplify" checked> Simplify</label>
+<label><input type="checkbox" value="study_guide"> Study Guide</label>
+<label><input type="checkbox" value="quiz"> Quiz</label>
+<label><input type="checkbox" value="vocabulary"> Vocabulary</label>
+<label><input type="checkbox" value="discussion"> Discussion</label>
+<label><input type="checkbox" value="cornell"> Cornell Notes</label>
+<label><input type="checkbox" value="summarize"> Summarize</label>
+<label><input type="checkbox" value="explain"> Explain</label>
+<label><input type="checkbox" value="translate"> Translate</label>
+<label><input type="checkbox" value="read"> Read Aloud</label>
 
 </div>
 
@@ -188,8 +195,6 @@ Allow Custom Prompts
 </div>
 
 
-<!-- EDIT MODAL -->
-
 <div id="editModal" class="modal">
 
 <h3>Edit Classroom</h3>
@@ -212,16 +217,16 @@ Allow Custom Prompts
 
 <div id="editModes" class="mode-grid">
 
-<label>Simplify <input type="checkbox" value="simplify"></label>
-<label>Study Guide <input type="checkbox" value="study_guide"></label>
-<label>Quiz <input type="checkbox" value="quiz"></label>
-<label>Vocabulary <input type="checkbox" value="vocabulary"></label>
-<label>Discussion <input type="checkbox" value="discussion"></label>
-<label>Cornell Notes <input type="checkbox" value="cornell"></label>
-<label>Summarize <input type="checkbox" value="summarize"></label>
-<label>Explain <input type="checkbox" value="explain"></label>
-<label>Translate <input type="checkbox" value="translate"></label>
-<label>Read Aloud <input type="checkbox" value="read"></label>
+<label><input type="checkbox" value="simplify"> Simplify</label>
+<label><input type="checkbox" value="study_guide"> Study Guide</label>
+<label><input type="checkbox" value="quiz"> Quiz</label>
+<label><input type="checkbox" value="vocabulary"> Vocabulary</label>
+<label><input type="checkbox" value="discussion"> Discussion</label>
+<label><input type="checkbox" value="cornell"> Cornell Notes</label>
+<label><input type="checkbox" value="summarize"> Summarize</label>
+<label><input type="checkbox" value="explain"> Explain</label>
+<label><input type="checkbox" value="translate"> Translate</label>
+<label><input type="checkbox" value="read"> Read Aloud</label>
 
 </div>
 
@@ -263,10 +268,7 @@ modes.push(cb.value)
 const response = await fetch(API + "/create_classroom",{
 
 method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 class_name:name,
@@ -302,10 +304,7 @@ if(!confirm("Delete this classroom?")) return
 await fetch(API + "/delete_classroom",{
 
 method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({code:code})
 
@@ -356,9 +355,7 @@ document.getElementById("editModal").style.display = "block"
 
 
 function closeEdit(){
-
 document.getElementById("editModal").style.display = "none"
-
 }
 
 
@@ -378,10 +375,7 @@ modes.push(cb.value)
 fetch(API + "/update_classroom",{
 
 method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 code:editingCode,
@@ -392,13 +386,9 @@ allowed_custom:custom
 
 })
 .then(()=>{
-
 alert("Classroom updated")
-
 closeEdit()
-
 loadClasses()
-
 })
 
 }
@@ -412,7 +402,7 @@ const data = await response.json()
 
 const table = document.getElementById("classTable")
 
-table.innerHTML = `
+let html = `
 <tr>
 <th>Class Name</th>
 <th>Code</th>
@@ -424,7 +414,7 @@ table.innerHTML = `
 
 data.forEach(c => {
 
-table.innerHTML += `
+html += `
 <tr>
 <td>${c.class_name ?? "Unnamed"}</td>
 <td>${c.code}</td>
@@ -439,6 +429,8 @@ table.innerHTML += `
 `
 
 })
+
+table.innerHTML = html
 
 }
 

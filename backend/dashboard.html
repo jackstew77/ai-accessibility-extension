@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <title>Teacher Dashboard</title>
 
 <style>
+
 body{
 font-family:Arial;
 background:#f5f7fb;
@@ -66,12 +69,23 @@ grid-template-columns:repeat(2,1fr);
 gap:6px;
 margin-top:10px;
 }
+
+.custom-row{
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:10px;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
 <h1>Teacher Classroom Dashboard</h1>
+
 
 <div class="card">
 
@@ -79,37 +93,67 @@ margin-top:10px;
 
 <input id="className" placeholder="Class Name">
 
+
 <label>Locked Lexile</label>
+
 <select id="lexile">
+
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
 <option value="elementary">Elementary</option>
 <option value="middle">Middle</option>
 <option value="high">High</option>
 <option value="advanced">Advanced</option>
+
 </select>
 
+
 <h4>Allowed AI Tools</h4>
+
 
 <div class="mode-grid">
 
 <label><input type="checkbox" value="simplify" checked> Simplify</label>
+
 <label><input type="checkbox" value="study_guide"> Study Guide</label>
+
 <label><input type="checkbox" value="quiz"> Quiz</label>
+
 <label><input type="checkbox" value="vocabulary"> Vocabulary</label>
+
 <label><input type="checkbox" value="discussion"> Discussion</label>
+
 <label><input type="checkbox" value="cornell"> Cornell Notes</label>
+
+<label><input type="checkbox" value="summarize"> Summarize</label>
+
+<label><input type="checkbox" value="explain"> Explain</label>
+
+<label><input type="checkbox" value="translate"> Translate</label>
+
+<label><input type="checkbox" value="custom"> Custom Prompt</label>
+
+<label><input type="checkbox" value="read"> Read Aloud</label>
 
 </div>
 
-<label style="margin-top:10px;">
+
+<div class="custom-row">
+
+<label>
+
 <input type="checkbox" id="allowCustom">
+
 Allow Custom Prompts
+
 </label>
 
 <button onclick="createClass()">Create Classroom</button>
 
 </div>
+
+</div>
+
 
 <div class="card">
 
@@ -120,55 +164,87 @@ Allow Custom Prompts
 <table id="classTable">
 
 <tr>
+
 <th>Class Name</th>
+
 <th>Code</th>
+
 <th>Locked Lexile</th>
+
 <th>Allowed Custom</th>
+
 <th>Actions</th>
+
 </tr>
 
 </table>
 
 </div>
 
+
 <script>
 
 const API = "https://ai-accessibility-extension.onrender.com"
 
+
 async function createClass(){
 
 const name = document.getElementById("className").value
+
 const lexile = document.getElementById("lexile").value
+
 const custom = document.getElementById("allowCustom").checked
+
 
 const modes = []
 
+
 document.querySelectorAll('.mode-grid input[type="checkbox"]').forEach(cb=>{
+
 if(cb.checked){
+
 modes.push(cb.value)
+
 }
+
 })
 
+
 const response = await fetch(API + "/create_classroom",{
+
 method:"POST",
+
 headers:{
+
 "Content-Type":"application/json"
+
 },
+
 body:JSON.stringify({
+
 class_name:name,
+
 allowed_modes:modes,
+
 locked_lexile:lexile,
+
 allowed_custom:custom
+
 })
+
 })
+
 
 const data = await response.json()
 
+
 alert("Classroom Code: " + data.code)
+
 
 loadClasses()
 
 }
+
 
 function copyCode(code){
 
@@ -178,21 +254,35 @@ alert("Copied: " + code)
 
 }
 
+
 async function deleteClass(code){
 
 if(!confirm("Delete this classroom?")) return
 
+
 await fetch(API + "/delete_classroom",{
+
 method:"POST",
+
 headers:{
+
 "Content-Type":"application/json"
+
 },
-body:JSON.stringify({code:code})
+
+body:JSON.stringify({
+
+code:code
+
 })
+
+})
+
 
 loadClasses()
 
 }
+
 
 async function loadClasses(){
 
@@ -200,40 +290,66 @@ const response = await fetch(API + "/classrooms")
 
 const data = await response.json()
 
+
 const table = document.getElementById("classTable")
 
+
 table.innerHTML = `
+
 <tr>
+
 <th>Class Name</th>
+
 <th>Code</th>
+
 <th>Locked Lexile</th>
+
 <th>Allowed Custom</th>
+
 <th>Actions</th>
+
 </tr>
+
 `
+
 
 data.forEach(c => {
 
+
 table.innerHTML += `
+
 <tr>
-<td>${c.class_name}</td>
+
+<td>${c.class_name ?? "Unnamed"}</td>
+
 <td>${c.code}</td>
+
 <td>${c.locked_lexile ?? "None"}</td>
+
 <td>${c.allowed_custom}</td>
+
 <td>
+
 <button class="small" onclick="copyCode('${c.code}')">Copy</button>
+
 <button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
+
 </td>
+
 </tr>
+
 `
 
 })
 
 }
 
+
 loadClasses()
 
 </script>
 
+
 </body>
+
 </html>

@@ -22,7 +22,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "chrome-extension://YOUR_EXTENSION_ID",
+        "chrome-extension://icaacogfnonpheeodfapnpmaledijehf",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST"],

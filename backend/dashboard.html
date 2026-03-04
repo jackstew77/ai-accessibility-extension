@@ -178,7 +178,6 @@ Allow Custom Prompts
 
 <button onclick="loadClasses()">Refresh</button>
 
-<!-- FIX: removed static header row -->
 <table id="classTable"></table>
 
 </div>
@@ -410,9 +409,9 @@ html += `
 <td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
 <td>
-<button class="small" onclick="copyCode('${c.code}')">Copy</button>
-<button class="small" onclick="editClass('${c.code}')">Edit</button>
-<button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
+<button class="small" onclick="copyCode(this.dataset.code)" data-code="${c.code}">Copy</button>
+<button class="small" onclick="editClass(this.dataset.code)" data-code="${c.code}">Edit</button>
+<button class="small delete" onclick="deleteClass(this.dataset.code)" data-code="${c.code}">Delete</button>
 </td>
 </tr>
 `

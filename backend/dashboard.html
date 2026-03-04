@@ -71,20 +71,23 @@ margin-top:10px;
 margin-bottom:20px;
 }
 
+.mode-grid label{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
 .custom-section{
 margin-top:10px;
 display:flex;
 align-items:center;
 justify-content:space-between;
-grid-column:1 / -1;
-width:100%;
 }
 
 .custom-label{
 display:flex;
 align-items:center;
 gap:8px;
-font-size:14px;
 white-space:nowrap;
 }
 
@@ -124,25 +127,25 @@ white-space:nowrap;
 
 <div class="mode-grid">
 
-<label><input type="checkbox" value="simplify" checked> Simplify</label>
+<label>Simplify <input type="checkbox" value="simplify" checked></label>
 
-<label><input type="checkbox" value="study_guide"> Study Guide</label>
+<label>Study Guide <input type="checkbox" value="study_guide"></label>
 
-<label><input type="checkbox" value="quiz"> Quiz</label>
+<label>Quiz <input type="checkbox" value="quiz"></label>
 
-<label><input type="checkbox" value="vocabulary"> Vocabulary</label>
+<label>Vocabulary <input type="checkbox" value="vocabulary"></label>
 
-<label><input type="checkbox" value="discussion"> Discussion</label>
+<label>Discussion <input type="checkbox" value="discussion"></label>
 
-<label><input type="checkbox" value="cornell"> Cornell Notes</label>
+<label>Cornell Notes <input type="checkbox" value="cornell"></label>
 
-<label><input type="checkbox" value="summarize"> Summarize</label>
+<label>Summarize <input type="checkbox" value="summarize"></label>
 
-<label><input type="checkbox" value="explain"> Explain</label>
+<label>Explain <input type="checkbox" value="explain"></label>
 
-<label><input type="checkbox" value="translate"> Translate</label>
+<label>Translate <input type="checkbox" value="translate"></label>
 
-<label><input type="checkbox" value="read"> Read Aloud</label>
+<label>Read Aloud <input type="checkbox" value="read"></label>
 
 </div>
 
@@ -257,6 +260,48 @@ loadClasses()
 }
 
 
+function editClass(code){
+
+const newLexile = prompt("Enter new locked lexile (early, elementary, middle, high, advanced or leave blank)")
+
+const customAllowed = confirm("Allow custom prompts?")
+
+const modes = []
+
+document.querySelectorAll('.mode-grid input[type="checkbox"]').forEach(cb=>{
+if(cb.checked){
+modes.push(cb.value)
+}
+})
+
+fetch(API + "/update_classroom",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+code:code,
+allowed_modes:modes,
+locked_lexile:newLexile,
+allowed_custom:customAllowed
+})
+
+})
+
+.then(()=>{
+
+alert("Classroom updated")
+
+loadClasses()
+
+})
+
+}
+
+
 async function loadClasses(){
 
 const response = await fetch(API + "/classrooms")
@@ -285,6 +330,7 @@ table.innerHTML += `
 <td>${c.allowed_custom}</td>
 <td>
 <button class="small" onclick="copyCode('${c.code}')">Copy</button>
+<button class="small" onclick="editClass('${c.code}')">Edit</button>
 <button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
 </td>
 </tr>

@@ -8,7 +8,7 @@
 // -----------------------------
 const CONFIG = {
   BACKEND_URL: "https://ai-accessibility-extension.onrender.com",
-  API_SECRET: "YOUR_API_SECRET_HERE",
+  API_SECRET: "a1f19272fe7d80f798dc05b471d6035d",
 };
 
 // -----------------------------

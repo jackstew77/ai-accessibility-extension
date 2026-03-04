@@ -224,7 +224,58 @@ allowed_custom:custom
 const data = await response.json()
 
 alert("Classroom Code: " + data.code)
+let editingCode = null
 
+function editClass(code){
+
+editingCode = code
+
+document.getElementById("editModal").style.display = "block"
+
+}
+
+function closeEdit(){
+
+document.getElementById("editModal").style.display = "none"
+
+}
+
+function saveEdit(){
+
+const lexile = document.getElementById("editLexile").value
+const custom = document.getElementById("editCustom").checked
+
+const modes = []
+
+document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
+if(cb.checked){
+modes.push(cb.value)
+}
+})
+
+fetch(API + "/update_classroom",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+code:editingCode,
+allowed_modes:modes,
+locked_lexile:lexile,
+allowed_custom:custom
+})
+
+})
+.then(()=>{
+alert("Classroom updated")
+closeEdit()
+loadClasses()
+})
+
+}
 loadClasses()
 
 }

@@ -32,10 +32,20 @@ button{
 background:#2c6ecb;
 color:white;
 border:none;
-padding:10px 16px;
+padding:8px 14px;
 border-radius:6px;
 cursor:pointer;
 margin-top:10px;
+}
+
+button.small{
+padding:6px 10px;
+font-size:12px;
+margin-right:5px;
+}
+
+button.delete{
+background:#e74c3c;
 }
 
 table{
@@ -114,6 +124,7 @@ Allow Custom Prompts
 <th>Code</th>
 <th>Locked Lexile</th>
 <th>Allowed Custom</th>
+<th>Actions</th>
 </tr>
 
 </table>
@@ -159,6 +170,30 @@ loadClasses()
 
 }
 
+function copyCode(code){
+
+navigator.clipboard.writeText(code)
+
+alert("Copied: " + code)
+
+}
+
+async function deleteClass(code){
+
+if(!confirm("Delete this classroom?")) return
+
+await fetch(API + "/delete_classroom",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({code:code})
+})
+
+loadClasses()
+
+}
+
 async function loadClasses(){
 
 const response = await fetch(API + "/classrooms")
@@ -173,6 +208,7 @@ table.innerHTML = `
 <th>Code</th>
 <th>Locked Lexile</th>
 <th>Allowed Custom</th>
+<th>Actions</th>
 </tr>
 `
 
@@ -184,6 +220,10 @@ table.innerHTML += `
 <td>${c.code}</td>
 <td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
+<td>
+<button class="small" onclick="copyCode('${c.code}')">Copy</button>
+<button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
+</td>
 </tr>
 `
 

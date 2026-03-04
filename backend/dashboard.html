@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teacher Dashboard</title>
+
+<style>
+body{
+font-family:Arial;
+background:#f5f7fb;
+padding:40px;
+}
+
+h1{
+color:#2c6ecb;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+input,select{
+padding:8px;
+margin:6px 0;
+width:100%;
+}
+
+button{
+background:#2c6ecb;
+color:white;
+border:none;
+padding:10px 16px;
+border-radius:6px;
+cursor:pointer;
+margin-top:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:left;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Teacher Classroom Dashboard</h1>
+
+<div class="card">
+
+<h3>Create Classroom</h3>
+
+<input id="className" placeholder="Class Name">
+
+<select id="lexile">
+<option value="">No Locked Lexile</option>
+<option value="early">Early</option>
+<option value="elementary">Elementary</option>
+<option value="middle">Middle</option>
+<option value="high">High</option>
+<option value="advanced">Advanced</option>
+</select>
+
+<label>
+<input type="checkbox" id="allowCustom">
+Allow Custom Prompts
+</label>
+
+<button onclick="createClass()">Create Classroom</button>
+
+</div>
+
+<div class="card">
+
+<h3>Your Classrooms</h3>
+
+<button onclick="loadClasses()">Refresh</button>
+
+<table id="classTable">
+
+<tr>
+<th>Class Name</th>
+<th>Code</th>
+<th>Locked Lexile</th>
+<th>Allowed Custom</th>
+</tr>
+
+</table>
+
+</div>
+
+<script>
+
+const API = "https://ai-accessibility-extension.onrender.com"
+
+async function createClass(){
+
+const name = document.getElementById("className").value
+const lexile = document.getElementById("lexile").value
+const custom = document.getElementById("allowCustom").checked
+
+const response = await fetch(API + "/create_classroom",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+class_name:name,
+allowed_modes:["simplify","study_guide","quiz","vocabulary"],
+locked_lexile:lexile,
+allowed_custom:custom
+})
+})
+
+const data = await response.json()
+
+alert("Classroom Code: " + data.code)
+
+loadClasses()
+
+}
+
+async function loadClasses(){
+
+const response = await fetch(API + "/classrooms")
+
+const data = await response.json()
+
+const table = document.getElementById("classTable")
+
+table.innerHTML = `
+<tr>
+<th>Class Name</th>
+<th>Code</th>
+<th>Locked Lexile</th>
+<th>Allowed Custom</th>
+</tr>
+`
+
+data.forEach(c => {
+
+table.innerHTML += `
+<tr>
+<td>${c.class_name}</td>
+<td>${c.code}</td>
+<td>${c.locked_lexile}</td>
+<td>${c.allowed_custom}</td>
+</tr>
+`
+
+})
+
+}
+
+loadClasses()
+
+</script>
+
+</body>
+</html>

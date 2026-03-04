@@ -320,7 +320,37 @@ function editClass(code){
 
 editingCode = code
 
+fetch(API + "/classrooms")
+.then(res => res.json())
+.then(data => {
+
+const classroom = data.find(c => c.code === code)
+
+if(!classroom) return
+
+document.getElementById("editLexile").value = classroom.locked_lexile || ""
+
+document.getElementById("editCustom").checked = classroom.allowed_custom
+
+document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
+cb.checked = false
+})
+
+if(classroom.allowed_modes){
+classroom.allowed_modes.forEach(mode => {
+
+const checkbox = document.querySelector(`#editModes input[value="${mode}"]`)
+
+if(checkbox){
+checkbox.checked = true
+}
+
+})
+}
+
 document.getElementById("editModal").style.display = "block"
+
+})
 
 }
 

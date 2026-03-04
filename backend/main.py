@@ -22,7 +22,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "chrome-extension://icaacogfnonpheeodfapnpmaledijehf",
+        "chrome-extension://YOUR_EXTENSION_ID",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
@@ -37,7 +37,7 @@ app.add_middleware(
 OPENAI_KEY    = os.environ["OPENAI_API_KEY"]
 SUPABASE_URL  = os.environ["SUPABASE_URL"]
 SUPABASE_KEY  = os.environ["SUPABASE_KEY"]
-API_SECRET    = os.environ["API_SECRET"]
+API_SECRET    = os.environ.get("API_SECRET", "")
 
 client   = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)

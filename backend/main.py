@@ -141,6 +141,7 @@ async def transform_text(request: TextRequest):
 
         print("\n--- NEW REQUEST ---")
         print("Raw classroom code:", request.classroom_code)
+        print("MODE RECEIVED:", request.mode)
 
         classroom = None
 

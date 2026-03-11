@@ -209,9 +209,9 @@ function showMainOverlay(selectedText, range) {
               mode: mode,
               level: document.getElementById("level-select")?.value,
               custom_prompt:
-                mode === "custom"
-                  ? document.getElementById("custom-prompt").value
-                  : null,
+                  mode === "custom"
+                      ? document.getElementById("custom-prompt")?.value || null
+                      : null,
               classroom_code: savedCode
             })
           }

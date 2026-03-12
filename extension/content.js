@@ -1,7 +1,6 @@
 // ==============================
 // 🚀 PHASE 2 – DYNAMIC CLASSROOM VERSION
 // ==============================
-
 let CLASSROOM_CODE = null;
 
 // Load saved classroom code
@@ -11,11 +10,9 @@ chrome.storage.local.get(["classroomCode"], function(result) {
   }
 });
 
-
 // ==============================
 // 🔥 HOTKEY (Ctrl + Shift + L)
 // ==============================
-
 document.addEventListener("keydown", async (event) => {
 
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
@@ -35,7 +32,6 @@ document.addEventListener("keydown", async (event) => {
 // ==============================
 // 🎓 MAIN MODAL
 // ==============================
-
 function showMainOverlay(selectedText, range) {
 
   removeOverlay();
@@ -176,9 +172,8 @@ function showMainOverlay(selectedText, range) {
 
 
   // ==============================
-  // APPLY BUTTON (DEBUG VERSION)
+  // APPLY BUTTON
   // ==============================
-
   document.getElementById("apply-btn").onclick = async () => {
 
     chrome.storage.local.get(["classroomCode"], async function(result) {
@@ -186,17 +181,20 @@ function showMainOverlay(selectedText, range) {
       const savedCode = result.classroomCode || null;
       const mode = modeSelect.value;
 
-let customPrompt = null;
+      let customPrompt = null;
 
-if (mode === "custom") {
-  const promptBox = document.getElementById("custom-prompt");
-  customPrompt = promptBox ? promptBox.value.trim() : null;
+      if (mode === "custom") {
 
-  if (!customPrompt) {
-    alert("Please enter a custom prompt.");
-    return;
-  }
-}
+        const promptBox = document.getElementById("custom-prompt");
+
+        customPrompt = promptBox ? promptBox.value.trim() : null;
+
+        if (!customPrompt) {
+          alert("Please enter a custom prompt.");
+          return;
+        }
+
+      }
 
       if (mode === "read") {
         showLanguageSelector(selectedText);
@@ -220,16 +218,12 @@ if (mode === "custom") {
               text: selectedText,
               mode: mode,
               level: document.getElementById("level-select")?.value,
-              custom_prompt: customPromt,
-                  mode === "custom"
-                      ? document.getElementById("custom-prompt")?.value || null
-                      : null,
+              custom_prompt: customPrompt,
               classroom_code: savedCode
             })
           }
         );
 
-        // 🔎 DEBUG OUTPUT
         const raw = await response.text();
         console.log("SERVER RESPONSE:", raw);
 
@@ -277,7 +271,6 @@ if (mode === "custom") {
 // ==============================
 // RESULT MODAL
 // ==============================
-
 function showResultOverlay(text, range) {
 
   removeOverlay();
@@ -350,7 +343,6 @@ function showResultOverlay(text, range) {
 // ==============================
 // 🔊 LANGUAGE SELECTOR
 // ==============================
-
 function showLanguageSelector(text) {
 
   removeOverlay();
@@ -404,7 +396,6 @@ function showLanguageSelector(text) {
 // ==============================
 // 🎙 SPEECH FUNCTION
 // ==============================
-
 function speakText(text, language = "en-US") {
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -421,7 +412,6 @@ function speakText(text, language = "en-US") {
 // ==============================
 // 🧹 CLEANUP
 // ==============================
-
 function removeOverlay() {
 
   const existing = document.getElementById("ai-overlay");

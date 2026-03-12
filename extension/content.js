@@ -220,7 +220,7 @@ if (mode === "custom") {
               text: selectedText,
               mode: mode,
               level: document.getElementById("level-select")?.value,
-              custom_prompt:
+              custom_prompt: customPromt,
                   mode === "custom"
                       ? document.getElementById("custom-prompt")?.value || null
                       : null,

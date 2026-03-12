@@ -184,7 +184,16 @@ function showMainOverlay(selectedText, range) {
     chrome.storage.local.get(["classroomCode"], async function(result) {
 
       const savedCode = result.classroomCode || null;
-      const mode = modeSelect.value;
+       const mode = modeSelect.value;
+
+      if (mode === "custom") {
+         const prompt = document.getElementById("custom-prompt")?.value.trim();
+
+          if (!prompt) {
+          alert("Please enter a custom prompt.");
+           return;
+         }
+      }
 
       if (mode === "read") {
         showLanguageSelector(selectedText);

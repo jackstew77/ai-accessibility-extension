@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>Teacher Classroom Dashboard</title>
 
-<style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<style>
 body{
 font-family:Arial;
 background:#f5f7fb;
 padding:40px;
 }
-
 h1{
 color:#2c6ecb;
 }
-
 .card{
 background:white;
 padding:20px;
@@ -24,13 +21,11 @@ border-radius:10px;
 box-shadow:0 4px 10px rgba(0,0,0,0.1);
 margin-bottom:20px;
 }
-
 input,select{
 padding:8px;
 margin:6px 0;
 width:100%;
 }
-
 button{
 background:#2c6ecb;
 color:white;
@@ -40,29 +35,24 @@ border-radius:6px;
 cursor:pointer;
 margin-top:10px;
 }
-
 button.small{
 padding:6px 10px;
 font-size:12px;
 margin-right:5px;
 }
-
 button.delete{
 background:#e74c3c;
 }
-
 table{
 width:100%;
 border-collapse:collapse;
 margin-top:20px;
 }
-
 th,td{
 padding:10px;
 border-bottom:1px solid #ddd;
 text-align:left;
 }
-
 .mode-grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
@@ -70,32 +60,27 @@ gap:10px;
 margin-top:10px;
 margin-bottom:20px;
 }
-
 .mode-grid label{
 display:flex;
 align-items:center;
 gap:8px;
 }
-
 .mode-grid input[type="checkbox"]{
 width:16px;
 height:16px;
 }
-
 .custom-section{
 margin-top:10px;
 display:flex;
 align-items:center;
 justify-content:space-between;
 }
-
 .custom-label{
 display:flex;
 align-items:center;
 gap:8px;
 white-space:nowrap;
 }
-
 .modal{
 display:none;
 position:fixed;
@@ -109,15 +94,12 @@ box-shadow:0 10px 30px rgba(0,0,0,0.25);
 width:420px;
 z-index:1000;
 }
-
 </style>
-
 </head>
 
 <body>
 
 <h1>Teacher Classroom Dashboard</h1>
-
 
 <div class="card">
 
@@ -125,20 +107,16 @@ z-index:1000;
 
 <input id="className" placeholder="Class Name">
 
-
 <label>Locked Lexile</label>
 
 <select id="lexile">
-
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
 <option value="elementary">Elementary</option>
 <option value="middle">Middle</option>
 <option value="high">High</option>
 <option value="advanced">Advanced</option>
-
 </select>
-
 
 <h4>Allowed AI Tools</h4>
 
@@ -157,7 +135,6 @@ z-index:1000;
 
 </div>
 
-
 <div class="custom-section">
 
 <label class="custom-label">
@@ -171,7 +148,6 @@ Allow Custom Prompts
 
 </div>
 
-
 <div class="card">
 
 <h3>Your Classrooms</h3>
@@ -182,7 +158,6 @@ Allow Custom Prompts
 
 </div>
 
-
 <div id="editModal" class="modal">
 
 <h3>Edit Classroom</h3>
@@ -190,16 +165,13 @@ Allow Custom Prompts
 <label>Locked Lexile</label>
 
 <select id="editLexile">
-
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
 <option value="elementary">Elementary</option>
 <option value="middle">Middle</option>
 <option value="high">High</option>
 <option value="advanced">Advanced</option>
-
 </select>
-
 
 <h4>Allowed AI Tools</h4>
 
@@ -218,7 +190,6 @@ Allow Custom Prompts
 
 </div>
 
-
 <label class="custom-label">
 <input type="checkbox" id="editCustom">
 Allow Custom Prompts
@@ -231,15 +202,26 @@ Allow Custom Prompts
 
 </div>
 
-
 <script>
 
 const API = "https://ai-accessibility-extension.onrender.com"
 
-let editingCode = null
+const supabase = window.supabase.createClient(
+"YOUR_SUPABASE_URL",
+"YOUR_SUPABASE_ANON_KEY"
+)
 
+let editingCode = null
+let token = null
+
+async function getToken(){
+const { data } = await supabase.auth.getSession()
+token = data.session?.access_token
+}
 
 async function createClass(){
+
+await getToken()
 
 const name = document.getElementById("className").value
 const lexile = document.getElementById("lexile").value
@@ -254,17 +236,17 @@ modes.push(cb.value)
 })
 
 const response = await fetch(API + "/create_classroom",{
-
 method:"POST",
-headers:{"Content-Type":"application/json"},
-
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
 body:JSON.stringify({
 class_name:name,
 allowed_modes:modes,
 locked_lexile:lexile,
 allowed_custom:custom
 })
-
 })
 
 const data = await response.json()
@@ -275,39 +257,39 @@ loadClasses()
 
 }
 
-
 function copyCode(code){
-
 navigator.clipboard.writeText(code)
-
 alert("Copied: " + code)
-
 }
 
-
 async function deleteClass(code){
+
+await getToken()
 
 if(!confirm("Delete this classroom?")) return
 
 await fetch(API + "/delete_classroom",{
-
 method:"POST",
-headers:{"Content-Type":"application/json"},
-
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
 body:JSON.stringify({code:code})
-
 })
 
 loadClasses()
 
 }
 
-
 function editClass(code){
 
 editingCode = code
 
-fetch(API + "/classrooms")
+fetch(API + "/classrooms",{
+headers:{
+"Authorization":"Bearer " + token
+}
+})
 .then(res => res.json())
 .then(data => {
 
@@ -316,7 +298,6 @@ const classroom = data.find(c => c.code === code)
 if(!classroom) return
 
 document.getElementById("editLexile").value = classroom.locked_lexile || ""
-
 document.getElementById("editCustom").checked = classroom.allowed_custom
 
 document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
@@ -324,6 +305,7 @@ cb.checked = false
 })
 
 if(classroom.allowed_modes){
+
 classroom.allowed_modes.forEach(mode => {
 
 const checkbox = document.querySelector(`#editModes input[value="${mode}"]`)
@@ -333,6 +315,7 @@ checkbox.checked = true
 }
 
 })
+
 }
 
 document.getElementById("editModal").style.display = "block"
@@ -341,13 +324,13 @@ document.getElementById("editModal").style.display = "block"
 
 }
 
-
 function closeEdit(){
 document.getElementById("editModal").style.display = "none"
 }
 
+async function saveEdit(){
 
-function saveEdit(){
+await getToken()
 
 const lexile = document.getElementById("editLexile").value
 const custom = document.getElementById("editCustom").checked
@@ -361,17 +344,17 @@ modes.push(cb.value)
 })
 
 fetch(API + "/update_classroom",{
-
 method:"POST",
-headers:{"Content-Type":"application/json"},
-
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
 body:JSON.stringify({
 code:editingCode,
 allowed_modes:modes,
 locked_lexile:lexile,
 allowed_custom:custom
 })
-
 })
 .then(()=>{
 alert("Classroom updated")
@@ -381,10 +364,15 @@ loadClasses()
 
 }
 
-
 async function loadClasses(){
 
-const response = await fetch(API + "/classrooms")
+await getToken()
+
+const response = await fetch(API + "/classrooms",{
+headers:{
+"Authorization":"Bearer " + token
+}
+})
 
 const data = await response.json()
 
@@ -409,9 +397,9 @@ html += `
 <td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
 <td>
-<button class="small" onclick="copyCode(this.dataset.code)" data-code="${c.code}">Copy</button>
-<button class="small" onclick="editClass(this.dataset.code)" data-code="${c.code}">Edit</button>
-<button class="small delete" onclick="deleteClass(this.dataset.code)" data-code="${c.code}">Delete</button>
+<button class="small" onclick="copyCode('${c.code}')">Copy</button>
+<button class="small" onclick="editClass('${c.code}')">Edit</button>
+<button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
 </td>
 </tr>
 `

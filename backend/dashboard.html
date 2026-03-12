@@ -216,7 +216,14 @@ let token = null
 
 async function getToken(){
 const { data } = await supabase.auth.getSession()
-token = data.session?.access_token
+
+if(!data.session){
+alert("You are not logged in. Please login again.")
+window.location.href = "login.html"
+return
+}
+  token = data.session?.access_token
+  
 }
 
 async function createClass(){

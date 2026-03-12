@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
@@ -29,6 +29,23 @@ print("DEBUG SUPABASE URL:", SUPABASE_URL)
 
 client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# -----------------------------
+# AUTH HELPER (NEW)
+# -----------------------------
+def get_teacher_id(authorization: str = Header(None)):
+    if not authorization:
+        return None
+
+    token = authorization.replace("Bearer ", "")
+
+    user = supabase.auth.get_user(token)
+
+    if user and user.user:
+        return user.user.id
+
+    return None
+
 
 # -----------------------------
 # Request Model
@@ -74,10 +91,12 @@ def health():
 # Create Classroom
 # -----------------------------
 @app.post("/create_classroom")
-def create_classroom(data: CreateClassroom):
+def create_classroom(data: CreateClassroom, authorization: str = Header(None)):
 
     import random
     import string
+
+    teacher_id = get_teacher_id(authorization)
 
     code = data.class_name.upper().replace(" ", "")[:5] + "-" + "".join(
         random.choices(string.ascii_uppercase + string.digits, k=4)
@@ -88,7 +107,8 @@ def create_classroom(data: CreateClassroom):
         "code": code,
         "allowed_modes": data.allowed_modes,
         "locked_lexile": data.locked_lexile,
-        "allowed_custom": data.allowed_custom
+        "allowed_custom": data.allowed_custom,
+        "teacher_id": teacher_id
     }).execute()
 
     return {"code": code}
@@ -99,9 +119,7 @@ def create_classroom(data: CreateClassroom):
 # -----------------------------
 @app.get("/classrooms")
 def get_classrooms():
-
     res = supabase.table("classrooms").select("*").execute()
-
     return res.data
 
 
@@ -110,9 +128,7 @@ def get_classrooms():
 # -----------------------------
 @app.post("/delete_classroom")
 def delete_classroom(data: DeleteClassroom):
-
     supabase.table("classrooms").delete().eq("code", data.code).execute()
-
     return {"status": "deleted"}
 
 
@@ -121,13 +137,11 @@ def delete_classroom(data: DeleteClassroom):
 # -----------------------------
 @app.post("/update_classroom")
 def update_classroom(data: UpdateClassroom):
-
     supabase.table("classrooms").update({
         "allowed_modes": data.allowed_modes,
         "locked_lexile": data.locked_lexile,
         "allowed_custom": data.allowed_custom
     }).eq("code", data.code).execute()
-
     return {"status": "updated"}
 
 
@@ -149,7 +163,6 @@ async def transform_text(request: TextRequest):
         # Fetch all rows for debug
         # -----------------------------
         all_rows = supabase.table("classrooms").select("*").execute()
-
         print("DEBUG ALL ROWS:", all_rows.data)
 
         if not all_rows.data:
@@ -159,7 +172,6 @@ async def transform_text(request: TextRequest):
         # Normalize incoming code
         # -----------------------------
         incoming_code = (request.classroom_code or "").strip().upper()
-
         print("Normalized incoming code:", incoming_code)
 
         match = None
@@ -167,7 +179,6 @@ async def transform_text(request: TextRequest):
         for row in all_rows.data:
 
             db_code = (row.get("code") or "").strip().upper()
-
             print("Checking DB code:", db_code)
 
             if db_code == incoming_code:
@@ -178,7 +189,6 @@ async def transform_text(request: TextRequest):
             return {"error": f"No match found for code: {incoming_code}"}
 
         classroom = match
-
         print("MATCH FOUND:", classroom)
 
         # -----------------------------

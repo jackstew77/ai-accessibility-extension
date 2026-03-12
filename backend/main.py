@@ -31,14 +31,13 @@ client = OpenAI(api_key=OPENAI_KEY)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -----------------------------
-# AUTH HELPER (NEW)
+# AUTH HELPER
 # -----------------------------
 def get_teacher_id(authorization: str = Header(None)):
     if not authorization:
         return None
 
     token = authorization.replace("Bearer ", "")
-
     user = supabase.auth.get_user(token)
 
     if user and user.user:
@@ -115,11 +114,18 @@ def create_classroom(data: CreateClassroom, authorization: str = Header(None)):
 
 
 # -----------------------------
-# Get Classrooms
+# Get Classrooms (UPDATED)
 # -----------------------------
 @app.get("/classrooms")
-def get_classrooms():
-    res = supabase.table("classrooms").select("*").execute()
+def get_classrooms(authorization: str = Header(None)):
+
+    teacher_id = get_teacher_id(authorization)
+
+    res = supabase.table("classrooms") \
+        .select("*") \
+        .eq("teacher_id", teacher_id) \
+        .execute()
+
     return res.data
 
 
@@ -133,7 +139,7 @@ def delete_classroom(data: DeleteClassroom):
 
 
 # -----------------------------
-# Update Classroom (NEW)
+# Update Classroom
 # -----------------------------
 @app.post("/update_classroom")
 def update_classroom(data: UpdateClassroom):

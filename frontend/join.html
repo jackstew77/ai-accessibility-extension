@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Join Lexic Classroom</title>
+</head>
+
+<body>
+
+<h2>Joining Classroom...</h2>
+
+<script>
+
+const params = new URLSearchParams(window.location.search)
+const code = params.get("code")
+
+if(code){
+
+localStorage.setItem("lexic_classroom_code", code)
+
+document.body.innerHTML = `
+<h2>Classroom Connected</h2>
+<p>Your classroom code has been saved.</p>
+<p>You can now close this tab.</p>
+`
+
+}else{
+
+document.body.innerHTML = `
+<h2>Error</h2>
+<p>No classroom code provided.</p>
+`
+
+}
+
+</script>
+
+</body>
+</html>

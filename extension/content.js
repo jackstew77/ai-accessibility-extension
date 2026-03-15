@@ -1,5 +1,5 @@
 // ==============================
-// 🚀 PHASE 2 – DYNAMIC CLASSROOM VERSION
+// 🚀 LEXIC – DYNAMIC CLASSROOM VERSION
 // ==============================
 
 let CLASSROOM_CODE = null;
@@ -11,7 +11,7 @@ chrome.storage.local.get(["classroomCode"], function(result) {
   }
 });
 
-// ALSO check URL for auto-join classroom links
+// ALSO check URL for auto‑join classroom links
 try {
   const urlParams = new URLSearchParams(window.location.search);
   const joinCode = urlParams.get("code");
@@ -21,7 +21,7 @@ try {
 
     chrome.storage.local.set({ classroomCode: joinCode });
 
-    console.log("Lexic classroom auto-joined:", joinCode);
+    console.log("Lexic classroom auto‑joined:", joinCode);
   }
 } catch (err) {
   console.log("Join link check failed:", err);
@@ -32,6 +32,7 @@ try {
 // ==============================
 
 document.addEventListener("keydown", async (event) => {
+
   if (!(event.ctrlKey && event.shiftKey && event.key === "L")) return;
 
   const selection = window.getSelection();
@@ -42,6 +43,7 @@ document.addEventListener("keydown", async (event) => {
   const range = selection.getRangeAt(0);
 
   showMainOverlay(selectedText, range);
+
 });
 
 // ==============================
@@ -76,23 +78,33 @@ function showMainOverlay(selectedText, range) {
     </div>
 
     <div style="margin-bottom:16px;">
-      <label style="font-weight:500;">Classroom Code:</label>
+
+      <label style="font-weight:500;">Classroom:</label>
+
+      <div id="classroom-status"
+        style="
+        margin-top:6px;
+        padding:8px;
+        background:#eef3ff;
+        border-radius:6px;
+        font-size:14px;">
+      </div>
 
       <input id="classroom-input"
         type="text"
         placeholder="Enter classroom code"
-        style="width:100%; padding:8px; margin-top:6px;">
+        style="width:100%; padding:8px; margin-top:8px;">
 
       <button id="save-classroom"
         style="margin-top:8px; padding:6px 10px; cursor:pointer;">
         Save Code
       </button>
+
     </div>
 
     <label style="font-weight:500;">Mode:</label>
 
     <select id="mode-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
-
       <option value="simplify">Simplify (Lexile)</option>
       <option value="study_guide">Create Study Guide</option>
       <option value="quiz">Generate Quiz</option>
@@ -104,7 +116,6 @@ function showMainOverlay(selectedText, range) {
       <option value="translate">Translate (Spanish)</option>
       <option value="custom">Custom Prompt</option>
       <option value="read">🔊 Read Aloud</option>
-
     </select>
 
     <div id="lexile-container">
@@ -112,13 +123,11 @@ function showMainOverlay(selectedText, range) {
       <label style="font-weight:500;">Lexile Level:</label>
 
       <select id="level-select" style="width:100%; padding:10px; margin:8px 0 16px 0;">
-
         <option value="early">Early Reader (BR–400L)</option>
         <option value="elementary">Elementary (400L–800L)</option>
         <option value="middle" selected>Middle School (800L–1100L)</option>
         <option value="high">High School (1100L–1300L)</option>
         <option value="advanced">Advanced (1300L–1600L)</option>
-
       </select>
 
     </div>
@@ -164,9 +173,13 @@ function showMainOverlay(selectedText, range) {
   document.body.appendChild(overlay);
 
   const classroomInput = document.getElementById("classroom-input");
+  const classroomStatus = document.getElementById("classroom-status");
 
   if (CLASSROOM_CODE) {
+    classroomStatus.innerText = "Connected to: " + CLASSROOM_CODE;
     classroomInput.value = CLASSROOM_CODE;
+  } else {
+    classroomStatus.innerText = "Not connected to a classroom";
   }
 
   document.getElementById("save-classroom").onclick = () => {
@@ -176,6 +189,8 @@ function showMainOverlay(selectedText, range) {
     chrome.storage.local.set({ classroomCode: value }, function() {
 
       CLASSROOM_CODE = value;
+
+      classroomStatus.innerText = "Connected to: " + value;
 
       alert("Classroom code saved.");
 
@@ -220,21 +235,15 @@ function showMainOverlay(selectedText, range) {
         customPrompt = promptBox ? promptBox.value.trim() : null;
 
         if (!customPrompt) {
-
           alert("Please enter a custom prompt.");
-
           return;
-
         }
 
       }
 
       if (mode === "read") {
-
         showLanguageSelector(selectedText);
-
         return;
-
       }
 
       overlay.innerHTML = `
@@ -267,39 +276,25 @@ function showMainOverlay(selectedText, range) {
         let data;
 
         try {
-
           data = JSON.parse(raw);
-
         } catch (err) {
-
           showResultOverlay("❌ Server returned invalid JSON.", range);
-
           return;
-
         }
 
         if (!response.ok) {
-
           showResultOverlay("❌ Server error.", range);
-
           return;
-
         }
 
         if (data.error) {
-
           showResultOverlay("❌ " + data.error, range);
-
           return;
-
         }
 
         if (!data.output) {
-
           showResultOverlay("❌ Unexpected server response.", range);
-
           return;
-
         }
 
         showResultOverlay(data.output, range);
@@ -384,9 +379,7 @@ function showResultOverlay(text, range) {
   document.getElementById("replace-btn").onclick = () => {
 
     range.deleteContents();
-
     range.insertNode(document.createTextNode(text));
-
     removeOverlay();
 
   };

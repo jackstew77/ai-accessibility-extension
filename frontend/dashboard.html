@@ -404,9 +404,12 @@ html += `
 <td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
 <td>
-<button class="small" onclick="copyCode('${c.code}')">Copy</button>
+<td>
+<button class="small" onclick="copyCode('${c.code}')">Copy Code</button>
+<button class="small" onclick="copyJoinLink('${c.code}')">Copy Join Link</button>
 <button class="small" onclick="editClass('${c.code}')">Edit</button>
 <button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
+</td>
 </td>
 </tr>
 `

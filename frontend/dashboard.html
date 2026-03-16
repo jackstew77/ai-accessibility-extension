@@ -381,6 +381,12 @@ async function loadClasses(){
 
 await getToken()
 
+const table = document.getElementById("classTable")
+
+table.innerHTML = "<tr><td>Loading classrooms...</td></tr>"
+
+try{
+
 const response = await fetch(API + "/classrooms",{
 headers:{
 "Authorization":"Bearer " + token
@@ -388,8 +394,6 @@ headers:{
 })
 
 const data = await response.json()
-
-const table = document.getElementById("classTable")
 
 let html = `
 <tr>
@@ -410,12 +414,10 @@ html += `
 <td>${c.locked_lexile ?? "None"}</td>
 <td>${c.allowed_custom}</td>
 <td>
-<td>
 <button class="small" onclick="copyCode('${c.code}')">Copy Code</button>
 <button class="small" onclick="copyJoinLink('${c.code}')">Copy Join Link</button>
 <button class="small" onclick="editClass('${c.code}')">Edit</button>
 <button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
-</td>
 </td>
 </tr>
 `
@@ -424,8 +426,16 @@ html += `
 
 table.innerHTML = html
 
+}catch(err){
+
+console.error("Load classes error:", err)
+
+table.innerHTML = "<tr><td>Failed to load classrooms</td></tr>"
+
 }
 
+}
+  
 loadClasses()
 
 </script>

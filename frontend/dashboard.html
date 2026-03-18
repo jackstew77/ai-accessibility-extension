@@ -2,9 +2,7 @@
 <html>
 <head>
 <title>Teacher Classroom Dashboard</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 body{
 font-family:Arial;
@@ -96,19 +94,15 @@ z-index:1000;
 }
 </style>
 </head>
-
 <body>
 
 <h1>Teacher Classroom Dashboard</h1>
 
 <div class="card">
-
 <h3>Create Classroom</h3>
-
 <input id="className" placeholder="Class Name">
 
 <label>Locked Lexile</label>
-
 <select id="lexile">
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
@@ -121,7 +115,6 @@ z-index:1000;
 <h4>Allowed AI Tools</h4>
 
 <div class="mode-grid">
-
 <label><input type="checkbox" value="simplify" checked> Simplify</label>
 <label><input type="checkbox" value="study_guide"> Study Guide</label>
 <label><input type="checkbox" value="quiz"> Quiz</label>
@@ -132,38 +125,27 @@ z-index:1000;
 <label><input type="checkbox" value="explain"> Explain</label>
 <label><input type="checkbox" value="translate"> Translate</label>
 <label><input type="checkbox" value="read"> Read Aloud</label>
-
 </div>
 
 <div class="custom-section">
-
 <label class="custom-label">
 <input type="checkbox" id="allowCustom">
 Allow Custom Prompts
 </label>
-
 <button onclick="createClass()">Create Classroom</button>
-
 </div>
-
 </div>
 
 <div class="card">
-
 <h3>Your Classrooms</h3>
-
 <button onclick="loadClasses()">Refresh Classrooms</button>
-
 <table id="classTable"></table>
-
 </div>
 
 <div id="editModal" class="modal">
-
 <h3>Edit Classroom</h3>
 
 <label>Locked Lexile</label>
-
 <select id="editLexile">
 <option value="">No Locked Lexile</option>
 <option value="early">Early</option>
@@ -176,7 +158,6 @@ Allow Custom Prompts
 <h4>Allowed AI Tools</h4>
 
 <div id="editModes" class="mode-grid">
-
 <label><input type="checkbox" value="simplify"> Simplify</label>
 <label><input type="checkbox" value="study_guide"> Study Guide</label>
 <label><input type="checkbox" value="quiz"> Quiz</label>
@@ -187,7 +168,6 @@ Allow Custom Prompts
 <label><input type="checkbox" value="explain"> Explain</label>
 <label><input type="checkbox" value="translate"> Translate</label>
 <label><input type="checkbox" value="read"> Read Aloud</label>
-
 </div>
 
 <label class="custom-label">
@@ -211,37 +191,45 @@ var supabase = window.supabase.createClient(
 "sb_publishable_oxSfQIHMDwwNdLL2HORWmA_TKvWovFR"
 )
 
+// ✅ LOGIN CHECK
+async function checkUser(){
+const { data } = await supabase.auth.getSession()
+if(!data.session){
+window.location.href = "login.html"
+return
+}
+}
+
+// ✅ FIXED (this was missing before)
+function copyCode(code){
+navigator.clipboard.writeText(code)
+alert("Copied code: " + code)
+}
+
 let editingCode = null
 let token = null
 
 async function getToken(){
 const { data } = await supabase.auth.getSession()
-
 if(!data.session){
 alert("You are not logged in. Please login again.")
 window.location.href = "login.html"
 return
 }
-  token = data.session?.access_token
-  
+token = data.session?.access_token
 }
 
 async function createClass(){
-
 await getToken()
-
 const name = document.getElementById("className").value
 const lexile = document.getElementById("lexile").value
 const custom = document.getElementById("allowCustom").checked
-
 const modes = []
-
 document.querySelectorAll('.mode-grid input[type="checkbox"]').forEach(cb=>{
 if(cb.checked){
 modes.push(cb.value)
 }
 })
-
 const response = await fetch(API + "/create_classroom",{
 method:"POST",
 headers:{
@@ -255,32 +243,21 @@ locked_lexile:lexile,
 allowed_custom:custom
 })
 })
-
 const data = await response.json()
-
 alert("Classroom Code: " + data.code)
-
 loadClasses()
-
 }
 
 function copyJoinLink(code){
-
 const link =
 "https://jackstew77.github.io/ai-accessibility-extension/frontend/join.html?code=" + code
-
 navigator.clipboard.writeText(link)
-
 alert("Join link copied:\n" + link)
-
 }
 
 async function deleteClass(code){
-
 await getToken()
-
 if(!confirm("Delete this classroom?")) return
-
 await fetch(API + "/delete_classroom",{
 method:"POST",
 headers:{
@@ -289,15 +266,11 @@ headers:{
 },
 body:JSON.stringify({code:code})
 })
-
 loadClasses()
-
 }
 
 function editClass(code){
-
 editingCode = code
-
 fetch(API + "/classrooms",{
 headers:{
 "Authorization":"Bearer " + token
@@ -305,36 +278,23 @@ headers:{
 })
 .then(res => res.json())
 .then(data => {
-
 const classroom = data.find(c => c.code === code)
-
 if(!classroom) return
-
 document.getElementById("editLexile").value = classroom.locked_lexile || ""
 document.getElementById("editCustom").checked = classroom.allowed_custom
-
 document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
 cb.checked = false
 })
-
 if(classroom.allowed_modes){
-
 classroom.allowed_modes.forEach(mode => {
-
 const checkbox = document.querySelector(`#editModes input[value="${mode}"]`)
-
 if(checkbox){
 checkbox.checked = true
 }
-
 })
-
 }
-
 document.getElementById("editModal").style.display = "block"
-
 })
-
 }
 
 function closeEdit(){
@@ -342,20 +302,15 @@ document.getElementById("editModal").style.display = "none"
 }
 
 async function saveEdit(){
-
 await getToken()
-
 const lexile = document.getElementById("editLexile").value
 const custom = document.getElementById("editCustom").checked
-
 const modes = []
-
 document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
 if(cb.checked){
 modes.push(cb.value)
 }
 })
-
 fetch(API + "/update_classroom",{
 method:"POST",
 headers:{
@@ -374,27 +329,19 @@ alert("Classroom updated")
 closeEdit()
 loadClasses()
 })
-
 }
 
 async function loadClasses(){
-
 await getToken()
-
 const table = document.getElementById("classTable")
-
 table.innerHTML = "<tr><td>Loading classrooms...</td></tr>"
-
 try{
-
 const response = await fetch(API + "/classrooms",{
 headers:{
 "Authorization":"Bearer " + token
 }
 })
-
 const data = await response.json()
-
 let html = `
 <tr>
 <th>Class Name</th>
@@ -404,9 +351,7 @@ let html = `
 <th>Actions</th>
 </tr>
 `
-
 data.forEach(c => {
-
 html += `
 <tr>
 <td>${c.class_name ?? "Unnamed"}</td>
@@ -421,33 +366,18 @@ html += `
 </td>
 </tr>
 `
-
 })
-
 table.innerHTML = html
-
 }catch(err){
-
 console.error("Load classes error:", err)
-
 table.innerHTML = "<tr><td>Failed to load classrooms</td></tr>"
-
+}
 }
 
-}
-  
+// ✅ FINAL LOAD FLOW
 window.onload = async () => {
-
-const { data } = await supabase.auth.getSession()
-
-if(!data.session){
-window.location.href = "login.html"
-return
-}
-
-// user is valid → continue loading dashboard
+await checkUser()
 loadClasses()
-
 }
 
 </script>

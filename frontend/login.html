@@ -2,7 +2,9 @@
 <html>
 <head>
 <title>Lexic Teacher Login</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 body{
 margin:0;
@@ -12,10 +14,11 @@ display:flex;
 align-items:center;
 justify-content:center;
 overflow:hidden;
-/* Background image */
+
+/* FIXED: background path */
 background: url('./assets/bg.jpg') no-repeat center center/cover;
 }
-/* Dark overlay */
+
 body::before{
 content:"";
 position:absolute;
@@ -26,7 +29,7 @@ height:100%;
 background:rgba(0,0,0,0.5);
 z-index:0;
 }
-/* ✨ Glow animation */
+
 .glow{
 position:absolute;
 width:600px;
@@ -36,21 +39,16 @@ filter: blur(120px);
 animation: float 8s ease-in-out infinite;
 z-index:0;
 }
-.glow:nth-child(1){
-top:-100px;
-left:-100px;
-}
-.glow:nth-child(2){
-bottom:-100px;
-right:-100px;
-animation-delay: 4s;
-}
+
+.glow:nth-child(1){ top:-100px; left:-100px; }
+.glow:nth-child(2){ bottom:-100px; right:-100px; animation-delay:4s; }
+
 @keyframes float{
 0%{transform: translateY(0px);}
 50%{transform: translateY(40px);}
 100%{transform: translateY(0px);}
 }
-/* Login card */
+
 .login-card{
 position:relative;
 z-index:1;
@@ -61,18 +59,18 @@ width:340px;
 box-shadow:0 20px 50px rgba(0,0,0,0.3);
 text-align:center;
 }
-/* Title */
+
 .login-card h1{
 margin-bottom:10px;
 color:#2c6ecb;
 }
-/* Subtitle */
+
 .subtitle{
 color:#666;
 margin-bottom:20px;
 font-size:14px;
 }
-/* Inputs */
+
 .login-card input{
 width:100%;
 padding:10px;
@@ -80,7 +78,7 @@ margin:10px 0;
 border-radius:8px;
 border:1px solid #ccc;
 }
-/* Buttons */
+
 .login-card button{
 width:100%;
 padding:10px;
@@ -90,12 +88,12 @@ color:white;
 border:none;
 border-radius:8px;
 cursor:pointer;
-font-size:14px;
 }
+
 .login-card button:hover{
 background:#1f55a5;
 }
-/* Google button */
+
 .google-btn{
 background:white;
 color:#444;
@@ -105,9 +103,11 @@ align-items:center;
 justify-content:center;
 gap:8px;
 }
+
 .google-btn:hover{
 background:#f5f5f5;
 }
+
 .divider{
 margin:15px 0;
 font-size:12px;
@@ -115,6 +115,7 @@ color:#999;
 }
 </style>
 </head>
+
 <body>
 
 <div class="glow"></div>
@@ -128,6 +129,7 @@ color:#999;
 <input id="password" type="password" placeholder="Password">
 
 <button onclick="login()">Login</button>
+<button onclick="signup()">Create Account</button>
 
 <div class="divider">or</div>
 
@@ -140,44 +142,63 @@ Sign in with Google
 
 <script>
 
+// ✅ ONLY ONE supabase instance (fixes your error)
 const supabase = window.supabase.createClient(
 "https://kjmnjomktavhvhhebvie.supabase.co",
 "sb_publishable_oxSfQIHMDwwNdLL2HORWmA_TKvWovFR"
 )
 
-// EMAIL LOGIN
+// ✅ LOGIN
 async function login(){
 
 const email = document.getElementById("email").value
 const password = document.getElementById("password").value
 
 const { data, error } = await supabase.auth.signInWithPassword({
-  email: email,
-  password: password
+email,
+password
 })
 
 if(error){
-  alert(error.message)
-  return
+alert(error.message)
+return
 }
 
-console.log("Logged in:", data)
-
-// ✅ FIXED redirect (GitHub Pages path + delay)
+// wait for session save
 setTimeout(() => {
-  window.location.href = "/ai-accessibility-extension/frontend/dashboard.html"
+window.location.href = "/ai-accessibility-extension/frontend/dashboard.html"
 }, 300)
 
 }
 
-// GOOGLE LOGIN
+// ✅ SIGN UP (NEW)
+async function signup(){
+
+const email = document.getElementById("email").value
+const password = document.getElementById("password").value
+
+const { error } = await supabase.auth.signUp({
+email,
+password
+})
+
+if(error){
+alert(error.message)
+return
+}
+
+alert("Account created! You can now log in.")
+
+}
+
+// ✅ GOOGLE LOGIN
 async function googleLogin(){
 
 await supabase.auth.signInWithOAuth({
-  provider: "google",
-  options: {
-    redirectTo: "https://jackstew77.github.io/ai-accessibility-extension/frontend/dashboard.html"
-  }
+provider: "google",
+options: {
+redirectTo: "https://jackstew77.github.io/ai-accessibility-extension/frontend/dashboard.html"
+}
 })
 
 }

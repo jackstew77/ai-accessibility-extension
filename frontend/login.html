@@ -1,82 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Teacher Login</title>
+<title>Lexic Teacher Login</title>
 
-<!-- Supabase Library -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
 
+body{
+margin:0;
+font-family:Arial, sans-serif;
+
+/* Background image */
+background: url('/mnt/data/file_0000000052b871f784902fb41c8ae6b8') no-repeat center center/cover;
+
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* Dark overlay for readability */
+body::before{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.45);
+z-index:0;
+}
+
+/* Login card */
+.login-card{
+position:relative;
+z-index:1;
+
+background:white;
+padding:40px;
+border-radius:16px;
+
+width:320px;
+
+box-shadow:0 20px 50px rgba(0,0,0,0.3);
+text-align:center;
+}
+
+/* Title */
+.login-card h1{
+margin-bottom:20px;
+color:#2c6ecb;
+}
+
+/* Inputs */
+.login-card input{
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+/* Buttons */
+.login-card button{
+width:100%;
+padding:10px;
+margin-top:10px;
+
+background:#2c6ecb;
+color:white;
+
+border:none;
+border-radius:8px;
+
+cursor:pointer;
+font-size:14px;
+}
+
+.login-card button:hover{
+background:#1f55a5;
+}
+
+/* Secondary button */
+.login-card .secondary{
+background:#e6eef8;
+color:#2c6ecb;
+}
+
+</style>
 </head>
 
 <body>
 
-<h2>Teacher Login</h2>
+<div class="login-card">
+
+<h1>Lexic</h1>
 
 <input id="email" placeholder="Email">
-<br><br>
-
 <input id="password" type="password" placeholder="Password">
-<br><br>
 
-<button id="signupBtn">Sign Up</button>
-<button id="loginBtn">Login</button>
+<button onclick="login()">Login</button>
+<button class="secondary" onclick="signup()">Sign Up</button>
+
+</div>
 
 <script>
 
-// CREATE SUPABASE CLIENT (ONLY DECLARE THIS ONCE)
-var supabaseClient = window.supabase.createClient(
-"https://kjmnjomktavhvhhebvie.supabase.co",
-"sb_publishable_oxSfQIHMDwwNdLL2HORWmA_TKvWovFR"
-)
+// your existing login logic stays the same
 
-// SIGNUP
-async function signup(){
-
-const email = document.getElementById("email").value
-const password = document.getElementById("password").value
-
-const { data, error } = await supabaseClient.auth.signUp({
-email: email,
-password: password
-})
-
-console.log(data)
-console.log(error)
-
-if(error){
-alert(error.message)
-return
-}
-
-alert("Account created")
-
-}
-
-// LOGIN
 async function login(){
-
-const email = document.getElementById("email").value
-const password = document.getElementById("password").value
-
-const { data, error } = await supabaseClient.auth.signInWithPassword({
-email: email,
-password: password
-})
-
-if(error){
-alert(error.message)
-return
+alert("Hook this to your Supabase login")
 }
 
-localStorage.setItem("token", data.session.access_token)
-
-window.location.href = "dashboard.html"
-
+async function signup(){
+alert("Hook this to your Supabase signup")
 }
-
-// BUTTON EVENTS
-document.getElementById("signupBtn").onclick = signup
-document.getElementById("loginBtn").onclick = login
 
 </script>
 

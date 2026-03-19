@@ -45,7 +45,6 @@ def get_teacher_id(authorization: str = Header(None)):
 
     return None
 
-
 # -----------------------------
 # Request Model
 # -----------------------------
@@ -56,6 +55,9 @@ class TextRequest(BaseModel):
     custom_prompt: str | None = None
     classroom_code: str | None = None
 
+    # 🔥 NEW
+    student_name: str | None = None
+    timestamp: str | None = None
 
 # -----------------------------
 # Classroom Models
@@ -66,17 +68,14 @@ class CreateClassroom(BaseModel):
     locked_lexile: str | None = None
     allowed_custom: bool = False
 
-
 class DeleteClassroom(BaseModel):
     code: str
-
 
 class UpdateClassroom(BaseModel):
     code: str
     allowed_modes: list
     locked_lexile: str | None = None
     allowed_custom: bool = False
-
 
 # -----------------------------
 # Health Check
@@ -85,13 +84,11 @@ class UpdateClassroom(BaseModel):
 def health():
     return {"status": "Backend running"}
 
-
 # -----------------------------
 # Create Classroom
 # -----------------------------
 @app.post("/create_classroom")
 def create_classroom(data: CreateClassroom, authorization: str = Header(None)):
-
     import random
     import string
 
@@ -112,13 +109,11 @@ def create_classroom(data: CreateClassroom, authorization: str = Header(None)):
 
     return {"code": code}
 
-
 # -----------------------------
-# Get Classrooms (UPDATED)
+# Get Classrooms
 # -----------------------------
 @app.get("/classrooms")
 def get_classrooms(authorization: str = Header(None)):
-
     teacher_id = get_teacher_id(authorization)
 
     res = supabase.table("classrooms") \
@@ -128,7 +123,6 @@ def get_classrooms(authorization: str = Header(None)):
 
     return res.data
 
-
 # -----------------------------
 # Delete Classroom
 # -----------------------------
@@ -136,7 +130,6 @@ def get_classrooms(authorization: str = Header(None)):
 def delete_classroom(data: DeleteClassroom):
     supabase.table("classrooms").delete().eq("code", data.code).execute()
     return {"status": "deleted"}
-
 
 # -----------------------------
 # Update Classroom
@@ -148,17 +141,15 @@ def update_classroom(data: UpdateClassroom):
         "locked_lexile": data.locked_lexile,
         "allowed_custom": data.allowed_custom
     }).eq("code", data.code).execute()
-    return {"status": "updated"}
 
+    return {"status": "updated"}
 
 # -----------------------------
 # Transform Route
 # -----------------------------
 @app.post("/transform")
 async def transform_text(request: TextRequest):
-
     try:
-
         print("\n--- NEW REQUEST ---")
         print("Raw classroom code:", request.classroom_code)
         print("MODE RECEIVED:", request.mode)
@@ -183,7 +174,6 @@ async def transform_text(request: TextRequest):
         match = None
 
         for row in all_rows.data:
-
             db_code = (row.get("code") or "").strip().upper()
             print("Checking DB code:", db_code)
 
@@ -212,17 +202,28 @@ async def transform_text(request: TextRequest):
             request.level = classroom["locked_lexile"]
 
         # -----------------------------
+        # 🔥 LOG STUDENT ACTIVITY
+        # -----------------------------
+        try:
+            if request.classroom_code:
+                supabase.table("student_activity").insert({
+                    "classroom_code": incoming_code,
+                    "student_name": request.student_name or "anonymous",
+                    "mode": request.mode,
+                    "timestamp": request.timestamp
+                }).execute()
+        except Exception as log_error:
+            print("LOGGING ERROR:", log_error)
+
+        # -----------------------------
         # Prompt Logic
         # -----------------------------
         if request.mode == "custom":
-
             if not request.custom_prompt:
                 return {"error": "No custom prompt provided."}
-
             system_prompt = request.custom_prompt
 
         elif request.mode == "simplify":
-
             lexile_prompts = {
                 "early": "Rewrite at Lexile BR–400L level.",
                 "elementary": "Rewrite at 400L–800L level.",
@@ -230,7 +231,6 @@ async def transform_text(request: TextRequest):
                 "high": "Rewrite at 1100L–1300L level.",
                 "advanced": "Rewrite at 1300L–1600L level."
             }
-
             system_prompt = lexile_prompts.get(
                 request.level,
                 lexile_prompts["elementary"]
@@ -268,7 +268,5 @@ async def transform_text(request: TextRequest):
         return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
-
         print("SERVER ERROR:", str(e))
-
         return {"error": str(e)}

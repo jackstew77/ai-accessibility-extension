@@ -270,3 +270,51 @@ async def transform_text(request: TextRequest):
     except Exception as e:
         print("SERVER ERROR:", str(e))
         return {"error": str(e)}
+
+# -----------------------------
+# 📊 GET CLASSROOM ANALYTICS
+# -----------------------------
+@app.get("/analytics/{code}")
+def get_analytics(code: str, authorization: str = Header(None)):
+
+    teacher_id = get_teacher_id(authorization)
+
+    # verify teacher owns classroom
+    classroom = supabase.table("classrooms") \
+        .select("*") \
+        .eq("code", code) \
+        .eq("teacher_id", teacher_id) \
+        .execute()
+
+    if not classroom.data:
+        return {"error": "Unauthorized"}
+
+    # get activity
+    activity = supabase.table("student_activity") \
+        .select("*") \
+        .eq("classroom_code", code) \
+        .execute()
+
+    data = activity.data or []
+
+    # -----------------------------
+    # 🔥 PROCESS DATA
+    # -----------------------------
+    students = {}
+
+    for row in data:
+        name = row.get("student_name", "anonymous")
+        mode = row.get("mode")
+
+        if name not in students:
+            students[name] = {}
+
+        if mode not in students[name]:
+            students[name][mode] = 0
+
+        students[name][mode] += 1
+
+    return {
+        "classroom_code": code,
+        "students": students
+    }

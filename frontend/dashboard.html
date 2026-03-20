@@ -3,7 +3,6 @@
 <head>
 <title>Lexic Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 body{
 margin:0;
@@ -11,7 +10,6 @@ font-family:Arial, sans-serif;
 background:#f5f7fb;
 color:#1f2937;
 }
-
 .topbar{
 background:#2c6ecb;
 color:white;
@@ -23,7 +21,6 @@ font-size:18px;
 font-weight:600;
 box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-
 .topbar-right{
 display:flex;
 align-items:center;
@@ -31,13 +28,11 @@ gap:14px;
 font-size:14px;
 font-weight:500;
 }
-
 .container{
 max-width:1100px;
 margin:auto;
 padding:30px 20px;
 }
-
 .card{
 background:white;
 padding:24px;
@@ -45,16 +40,13 @@ border-radius:16px;
 box-shadow:0 8px 24px rgba(0,0,0,0.08);
 margin-bottom:24px;
 }
-
 h1,h2,h3,h4{
 margin-top:0;
 }
-
 .section-title{
 margin-bottom:16px;
 color:#2c6ecb;
 }
-
 input,select{
 padding:11px 12px;
 margin:6px 0 12px 0;
@@ -65,13 +57,11 @@ box-sizing:border-box;
 font-size:14px;
 background:white;
 }
-
 input:focus,select:focus{
 outline:none;
 border-color:#2c6ecb;
 box-shadow:0 0 0 3px rgba(44,110,203,0.12);
 }
-
 button{
 background:#2c6ecb;
 color:white;
@@ -83,34 +73,27 @@ font-size:14px;
 font-weight:600;
 transition:0.2s;
 }
-
 button:hover{
 background:#1f55a5;
 transform:translateY(-1px);
 }
-
 button.small{
 padding:8px 12px;
 font-size:12px;
 }
-
 button.delete{
 background:#e74c3c;
 }
-
 button.delete:hover{
 background:#c0392b;
 }
-
 button.secondary{
 background:#eef3ff;
 color:#2c6ecb;
 }
-
 button.secondary:hover{
 background:#dde8ff;
 }
-
 .mode-grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
@@ -118,7 +101,6 @@ gap:10px;
 margin-top:10px;
 margin-bottom:20px;
 }
-
 .mode-grid label{
 display:flex;
 align-items:center;
@@ -128,13 +110,11 @@ padding:10px 12px;
 border-radius:10px;
 border:1px solid #e8edf8;
 }
-
 .mode-grid input[type="checkbox"]{
 width:16px;
 height:16px;
 margin:0;
 }
-
 .custom-section{
 margin-top:8px;
 display:flex;
@@ -143,7 +123,6 @@ justify-content:space-between;
 gap:15px;
 flex-wrap:wrap;
 }
-
 .custom-label{
 display:flex;
 align-items:center;
@@ -151,14 +130,12 @@ gap:8px;
 white-space:nowrap;
 font-size:14px;
 }
-
 .class-grid{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
 gap:18px;
 margin-top:18px;
 }
-
 .class-card{
 background:white;
 border-radius:16px;
@@ -167,35 +144,29 @@ box-shadow:0 8px 20px rgba(0,0,0,0.08);
 border:1px solid #edf1f7;
 transition:0.2s;
 }
-
 .class-card:hover{
 transform:translateY(-3px);
 box-shadow:0 12px 26px rgba(0,0,0,0.1);
 }
-
 .class-card h3{
 margin:0 0 12px 0;
 color:#2c6ecb;
 font-size:18px;
 }
-
 .class-meta{
 font-size:14px;
 margin-bottom:8px;
 color:#475569;
 }
-
 .class-meta strong{
 color:#111827;
 }
-
 .card-actions{
 display:flex;
 flex-wrap:wrap;
 gap:8px;
 margin-top:16px;
 }
-
 .empty-state{
 text-align:center;
 padding:50px 20px;
@@ -204,17 +175,14 @@ border-radius:16px;
 box-shadow:0 8px 24px rgba(0,0,0,0.08);
 border:1px dashed #c9d7f5;
 }
-
 .empty-state h2{
 color:#2c6ecb;
 margin-bottom:10px;
 }
-
 .empty-state p{
 color:#64748b;
 margin-bottom:18px;
 }
-
 .modal{
 display:none;
 position:fixed;
@@ -229,7 +197,6 @@ width:420px;
 max-width:90vw;
 z-index:1000;
 }
-
 .modal-overlay{
 display:none;
 position:fixed;
@@ -237,7 +204,6 @@ inset:0;
 background:rgba(0,0,0,0.35);
 z-index:999;
 }
-
 .toast{
 position:fixed;
 top:20px;
@@ -253,7 +219,6 @@ opacity:0;
 transform:translateY(-10px);
 transition:all 0.25s ease;
 }
-
 .toast.show{
 opacity:1;
 transform:translateY(0);
@@ -261,7 +226,6 @@ transform:translateY(0);
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div>Lexic Dashboard</div>
   <div class="topbar-right">
@@ -269,14 +233,10 @@ transform:translateY(0);
     <button class="secondary" onclick="logout()">Logout</button>
   </div>
 </div>
-
 <div class="container">
-
 <div class="card">
 <h3 class="section-title">Create Classroom</h3>
-
 <input id="className" placeholder="Class Name">
-
 <label>Locked Lexile</label>
 <select id="lexile">
 <option value="">No Locked Lexile</option>
@@ -286,9 +246,7 @@ transform:translateY(0);
 <option value="high">High</option>
 <option value="advanced">Advanced</option>
 </select>
-
 <h4>Allowed AI Tools</h4>
-
 <div class="mode-grid" id="createModes">
 <label><input type="checkbox" value="simplify" checked> Simplify</label>
 <label><input type="checkbox" value="study_guide"> Study Guide</label>
@@ -301,7 +259,6 @@ transform:translateY(0);
 <label><input type="checkbox" value="translate"> Translate</label>
 <label><input type="checkbox" value="read"> Read Aloud</label>
 </div>
-
 <div class="custom-section">
 <label class="custom-label">
 <input type="checkbox" id="allowCustom">
@@ -310,7 +267,6 @@ Allow Custom Prompts
 <button onclick="createClass()">Create Classroom</button>
 </div>
 </div>
-
 <div class="card">
 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
 <h3 class="section-title" style="margin-bottom:0;">Your Classrooms</h3>
@@ -318,14 +274,10 @@ Allow Custom Prompts
 </div>
 <div id="classContainer"></div>
 </div>
-
 </div>
-
 <div class="modal-overlay" id="modalOverlay" onclick="closeEdit()"></div>
-
 <div id="editModal" class="modal">
 <h3>Edit Classroom</h3>
-
 <label>Locked Lexile</label>
 <select id="editLexile">
 <option value="">No Locked Lexile</option>
@@ -335,9 +287,7 @@ Allow Custom Prompts
 <option value="high">High</option>
 <option value="advanced">Advanced</option>
 </select>
-
 <h4>Allowed AI Tools</h4>
-
 <div id="editModes" class="mode-grid">
 <label><input type="checkbox" value="simplify"> Simplify</label>
 <label><input type="checkbox" value="study_guide"> Study Guide</label>
@@ -350,31 +300,24 @@ Allow Custom Prompts
 <label><input type="checkbox" value="translate"> Translate</label>
 <label><input type="checkbox" value="read"> Read Aloud</label>
 </div>
-
 <label class="custom-label">
 <input type="checkbox" id="editCustom">
 Allow Custom Prompts
 </label>
-
 <br><br>
-
 <div style="display:flex; gap:10px; justify-content:flex-end;">
 <button onclick="saveEdit()">Save Changes</button>
 <button class="secondary" onclick="closeEdit()">Cancel</button>
 </div>
 </div>
-
 <script>
 const API = "https://ai-accessibility-extension.onrender.com";
-
 var supabase = window.supabase.createClient(
 "https://kjmnjomktavhvhhebvie.supabase.co",
 "sb_publishable_oxSfQIHMDwwNdLL2HORWmA_TKvWovFR"
 );
-
 let editingCode = null;
 let token = null;
-
 async function checkUser(){
 const { data } = await supabase.auth.getSession();
 if(!data.session){
@@ -382,46 +325,38 @@ window.location.href = "/ai-accessibility-extension/frontend/login.html";
 return;
 }
 }
-
 async function loadUser(){
 const { data } = await supabase.auth.getUser();
 if(data.user){
 document.getElementById("userEmail").innerText = data.user.email;
 }
 }
-
 async function logout(){
 await supabase.auth.signOut();
 window.location.href = "/ai-accessibility-extension/frontend/login.html";
 }
-
 function showSuccess(message){
 const popup = document.createElement("div");
 popup.className = "toast";
 popup.innerText = message;
 document.body.appendChild(popup);
-
 setTimeout(() => {
 popup.classList.add("show");
 }, 10);
-
 setTimeout(() => {
 popup.classList.remove("show");
 setTimeout(() => popup.remove(), 250);
 }, 2500);
 }
-
 function copyCode(code){
 navigator.clipboard.writeText(code);
 showSuccess("Classroom code copied");
 }
-
 function copyJoinLink(code){
 const link = "https://jackstew77.github.io/ai-accessibility-extension/frontend/join.html?code=" + code;
 navigator.clipboard.writeText(link);
 showSuccess("Join link copied");
 }
-
 async function getToken(){
 const { data } = await supabase.auth.getSession();
 if(!data.session){
@@ -430,21 +365,17 @@ return;
 }
 token = data.session?.access_token;
 }
-
 async function createClass(){
 await getToken();
-
 const name = document.getElementById("className").value;
 const lexile = document.getElementById("lexile").value;
 const custom = document.getElementById("allowCustom").checked;
-
 const modes = [];
 document.querySelectorAll('#createModes input[type="checkbox"]').forEach(cb => {
 if(cb.checked){
 modes.push(cb.value);
 }
 });
-
 const response = await fetch(API + "/create_classroom",{
 method:"POST",
 headers:{
@@ -458,25 +389,19 @@ locked_lexile:lexile,
 allowed_custom:custom
 })
 });
-
 const data = await response.json();
-
 showSuccess("Class created! Code: " + data.code);
-
 document.getElementById("className").value = "";
 document.getElementById("lexile").value = "";
 document.getElementById("allowCustom").checked = false;
 document.querySelectorAll('#createModes input[type="checkbox"]').forEach(cb => {
 cb.checked = cb.value === "simplify";
 });
-
 loadClasses();
 }
-
 async function deleteClass(code){
 await getToken();
 if(!confirm("Delete this classroom?")) return;
-
 await fetch(API + "/delete_classroom",{
 method:"POST",
 headers:{
@@ -485,14 +410,11 @@ headers:{
 },
 body:JSON.stringify({code:code})
 });
-
 showSuccess("Classroom deleted");
 loadClasses();
 }
-
 function editClass(code){
 editingCode = code;
-
 fetch(API + "/classrooms",{
 headers:{
 "Authorization":"Bearer " + token
@@ -502,14 +424,11 @@ headers:{
 .then(data => {
 const classroom = data.find(c => c.code === code);
 if(!classroom) return;
-
 document.getElementById("editLexile").value = classroom.locked_lexile || "";
 document.getElementById("editCustom").checked = classroom.allowed_custom;
-
 document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
 cb.checked = false;
 });
-
 if(classroom.allowed_modes){
 classroom.allowed_modes.forEach(mode => {
 const checkbox = document.querySelector(`#editModes input[value="${mode}"]`);
@@ -518,30 +437,24 @@ checkbox.checked = true;
 }
 });
 }
-
 document.getElementById("modalOverlay").style.display = "block";
 document.getElementById("editModal").style.display = "block";
 });
 }
-
 function closeEdit(){
 document.getElementById("editModal").style.display = "none";
 document.getElementById("modalOverlay").style.display = "none";
 }
-
 async function saveEdit(){
 await getToken();
-
 const lexile = document.getElementById("editLexile").value;
 const custom = document.getElementById("editCustom").checked;
 const modes = [];
-
 document.querySelectorAll('#editModes input[type="checkbox"]').forEach(cb=>{
 if(cb.checked){
 modes.push(cb.value);
 }
 });
-
 fetch(API + "/update_classroom",{
 method:"POST",
 headers:{
@@ -562,21 +475,107 @@ loadClasses();
 });
 }
 
-async function loadClasses(){
+// ==============================
+// NEW: ANALYTICS MODAL
+// ==============================
+function showAnalyticsModal(content){
+const existing = document.getElementById("analytics-modal");
+if(existing){
+existing.remove();
+}
+
+const modal = document.createElement("div");
+modal.id = "analytics-modal";
+modal.style = `
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+background:white;
+padding:25px;
+border-radius:16px;
+box-shadow:0 16px 40px rgba(0,0,0,0.25);
+width:420px;
+max-width:90vw;
+max-height:80vh;
+overflow:auto;
+z-index:2001;
+`;
+
+modal.innerHTML = `
+<div>${content}</div>
+<br>
+<div style="text-align:right;">
+<button onclick="document.getElementById('analytics-modal').remove()">Close</button>
+</div>
+`;
+
+document.body.appendChild(modal);
+}
+
+// ==============================
+// NEW: VIEW ANALYTICS
+// ==============================
+async function viewAnalytics(code){
 await getToken();
 
+const res = await fetch(API + "/analytics/" + code,{
+headers:{
+"Authorization":"Bearer " + token
+}
+});
+
+const data = await res.json();
+
+if(data.error){
+showSuccess(data.error);
+return;
+}
+
+let html = `<h2 style="margin-top:0;">Analytics</h2>`;
+html += `<div style="margin-bottom:12px; color:#64748b;"><strong>Classroom:</strong> ${code}</div>`;
+
+if(!data.students || !Object.keys(data.students).length){
+html += `<p>No student activity yet.</p>`;
+}else{
+for(const student in data.students){
+html += `
+<div style="
+background:#f8faff;
+padding:12px;
+border-radius:10px;
+margin-bottom:10px;
+border:1px solid #e8edf8;
+">
+<strong>${student}</strong>
+<ul style="margin:8px 0 0 18px; padding:0;">
+`;
+
+for(const mode in data.students[student]){
+html += `<li>${mode}: ${data.students[student][mode]}</li>`;
+}
+
+html += `
+</ul>
+</div>
+`;
+}
+}
+
+showAnalyticsModal(html);
+}
+
+async function loadClasses(){
+await getToken();
 const container = document.getElementById("classContainer");
 container.innerHTML = "<p style='color:#64748b;'>Loading classrooms...</p>";
-
 try{
 const response = await fetch(API + "/classrooms",{
 headers:{
 "Authorization":"Bearer " + token
 }
 });
-
 const data = await response.json();
-
 if(!data.length){
 container.innerHTML = `
 <div class="empty-state">
@@ -587,9 +586,7 @@ container.innerHTML = `
 `;
 return;
 }
-
 let html = `<div class="class-grid">`;
-
 data.forEach(c => {
 html += `
 <div class="class-card">
@@ -600,28 +597,25 @@ html += `
   <div class="card-actions">
     <button class="small" onclick="copyCode('${c.code}')">Copy Code</button>
     <button class="small" onclick="copyJoinLink('${c.code}')">Copy Link</button>
+    <button class="small" onclick="viewAnalytics('${c.code}')">Analytics</button>
     <button class="small" onclick="editClass('${c.code}')">Edit</button>
     <button class="small delete" onclick="deleteClass('${c.code}')">Delete</button>
   </div>
 </div>
 `;
 });
-
 html += `</div>`;
 container.innerHTML = html;
-
 }catch(err){
 console.error("Load classes error:", err);
 container.innerHTML = "<p style='color:#dc2626;'>Failed to load classrooms</p>";
 }
 }
-
 window.onload = async () => {
 await checkUser();
 await loadUser();
 await loadClasses();
 };
 </script>
-
 </body>
 </html>

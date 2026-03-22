@@ -263,13 +263,15 @@ function showMainOverlay(selectedText, range) {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+             body: JSON.stringify({
               text: selectedText,
               mode: mode,
               level: document.getElementById("level-select")?.value,
               custom_prompt: customPrompt,
               classroom_code: savedCode,
-              student_name: savedStudentName,
+
+                // 🔥 ADD THESE
+              student_name: "student_" + Math.floor(Math.random() * 1000),
               timestamp: new Date().toISOString()
             })
           }

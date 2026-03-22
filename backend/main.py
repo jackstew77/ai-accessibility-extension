@@ -229,65 +229,64 @@ async def transform_text(request: TextRequest):
 @app.get("/analytics/{code}")
 def get_analytics(code: str, authorization: str = Header(None)):
 
-    teacher_id = get_teacher_id(authorization)
+    try:
+        teacher_id = get_teacher_id(authorization)
 
-    classroom = supabase.table("classrooms") \
-        .select("*") \
-        .eq("code", code) \
-        .eq("teacher_id", teacher_id) \
-        .execute()
+        if not teacher_id:
+            return {"error": "No auth token provided"}
 
-    if not classroom.data:
-        return {"error": "Unauthorized"}
+        classroom = supabase.table("classrooms") \
+            .select("*") \
+            .eq("code", code) \
+            .eq("teacher_id", teacher_id) \
+            .execute()
 
-    activity = supabase.table("student_activity") \
-        .select("*") \
-        .eq("classroom_code", code) \
-        .execute()
+        if not classroom.data:
+            return {"error": "Unauthorized or classroom not found"}
 
-    data = activity.data or []
+        activity = supabase.table("student_activity") \
+            .select("*") \
+            .eq("classroom_code", code) \
+            .execute()
 
-    students = {}
-    tool_counts = {}
-    student_totals = {}
-    total_activity = 0
+        data = activity.data or []
 
-    for row in data:
-        name = row.get("student_name", "anonymous")
-        mode = row.get("mode")
+        students = {}
+        tool_counts = {}
+        student_totals = {}
+        total_activity = 0
 
-        if name not in students:
-            students[name] = {}
+        for row in data:
+            name = row.get("student_name", "anonymous")
+            mode = row.get("mode")
 
-        if mode not in students[name]:
-            students[name][mode] = 0
+            if name not in students:
+                students[name] = {}
 
-        students[name][mode] += 1
+            if mode not in students[name]:
+                students[name][mode] = 0
 
-        # 🔥 totals
-        total_activity += 1
+            students[name][mode] += 1
 
-        if mode not in tool_counts:
-            tool_counts[mode] = 0
-        tool_counts[mode] += 1
+            total_activity += 1
 
-        if name not in student_totals:
-            student_totals[name] = 0
-        student_totals[name] += 1
+            tool_counts[mode] = tool_counts.get(mode, 0) + 1
+            student_totals[name] = student_totals.get(name, 0) + 1
 
-    # 🔥 most used tool
-    most_used_tool = max(tool_counts, key=tool_counts.get) if tool_counts else None
+        most_used_tool = max(tool_counts, key=tool_counts.get) if tool_counts else None
+        top_student = max(student_totals, key=student_totals.get) if student_totals else None
 
-    # 🔥 top student
-    top_student = max(student_totals, key=student_totals.get) if student_totals else None
+        return {
+            "classroom_code": code,
+            "students": students,
+            "total_activity": total_activity,
+            "most_used_tool": most_used_tool,
+            "top_student": top_student
+        }
 
-    return {
-        "classroom_code": code,
-        "students": students,
-        "total_activity": total_activity,
-        "most_used_tool": most_used_tool,
-        "top_student": top_student
-    }
+    except Exception as e:
+        print("ANALYTICS ERROR:", str(e))
+        return {"error": str(e)}
 import uvicorn
 
 if __name__ == "__main__":

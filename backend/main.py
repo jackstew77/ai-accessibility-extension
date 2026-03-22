@@ -288,3 +288,8 @@ def get_analytics(code: str, authorization: str = Header(None)):
         "most_used_tool": most_used_tool,
         "top_student": top_student
     }
+import uvicorn
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

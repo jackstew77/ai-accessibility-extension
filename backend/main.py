@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from supabase import create_client
 import os
+import uvicorn
 
 app = FastAPI()
 
@@ -36,10 +37,13 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_teacher_id(authorization: str = Header(None)):
     if not authorization:
         return None
+
     token = authorization.replace("Bearer ", "")
     user = supabase.auth.get_user(token)
+
     if user and user.user:
         return user.user.id
+
     return None
 
 # -----------------------------
@@ -51,8 +55,6 @@ class TextRequest(BaseModel):
     level: str = "elementary"
     custom_prompt: str | None = None
     classroom_code: str | None = None
-
-    # 🔥 KEEP YOUR EXISTING
     student_name: str | None = None
     timestamp: str | None = None
 
@@ -152,7 +154,6 @@ async def transform_text(request: TextRequest):
         print("MODE RECEIVED:", request.mode)
 
         classroom = None
-
         all_rows = supabase.table("classrooms").select("*").execute()
 
         if not all_rows.data:
@@ -187,7 +188,7 @@ async def transform_text(request: TextRequest):
             request.level = classroom["locked_lexile"]
 
         # -----------------------------
-        # 🔥 LOG ACTIVITY (UNCHANGED)
+        # Log Activity
         # -----------------------------
         try:
             if request.classroom_code:
@@ -204,11 +205,52 @@ async def transform_text(request: TextRequest):
         # Prompt Logic
         # -----------------------------
         if request.mode == "custom":
+            if not request.custom_prompt:
+                return {"error": "No custom prompt provided."}
             system_prompt = request.custom_prompt
+
         elif request.mode == "simplify":
-            system_prompt = "Rewrite at appropriate lexile."
+            lexile_prompts = {
+                "early": "Rewrite this text for an early reader at Lexile BR–400L. Use very short sentences, simple vocabulary, and clear ideas.",
+                "elementary": "Rewrite this text at a Lexile range of 400L–800L. Use simple vocabulary and shorter sentences while keeping the meaning.",
+                "middle": "Rewrite this text at a Lexile range of 800L–1100L. Make it easier to understand for a middle school student while preserving all important ideas.",
+                "high": "Rewrite this text at a Lexile range of 1100L–1300L. Keep it clear, academic, and appropriate for high school students.",
+                "advanced": "Rewrite this text at a Lexile range of 1300L–1600L. Keep it rigorous, precise, and suitable for advanced readers."
+            }
+            system_prompt = lexile_prompts.get(
+                request.level,
+                lexile_prompts["elementary"]
+            )
+
+        elif request.mode == "study_guide":
+            system_prompt = "Turn this into a structured study guide with headings, key ideas, important terms, and bullet points."
+
+        elif request.mode == "quiz":
+            system_prompt = "Create 5 multiple-choice quiz questions based on this text and include an answer key."
+
+        elif request.mode == "vocabulary":
+            system_prompt = "Extract 5 important academic vocabulary words from this text and define each clearly."
+
+        elif request.mode == "discussion":
+            system_prompt = "Create 5 thoughtful discussion questions based on this text."
+
+        elif request.mode == "cornell":
+            system_prompt = "Rewrite this into Cornell Notes format with cues/questions, notes, and a short summary."
+
+        elif request.mode == "summarize":
+            system_prompt = "Summarize this text clearly and concisely in a way that keeps the key ideas."
+
+        elif request.mode == "explain":
+            system_prompt = "Explain this text in a clearer, easier-to-understand way for a student."
+
+        elif request.mode == "translate":
+            system_prompt = "Translate this text into Spanish while preserving the meaning."
+
+        elif request.mode == "read":
+            system_prompt = "Rewrite this text clearly for text-to-speech reading while preserving the meaning."
+
         else:
-            system_prompt = "Rewrite clearly."
+            system_prompt = "Rewrite this clearly while preserving the original meaning."
 
         ai_response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -221,14 +263,14 @@ async def transform_text(request: TextRequest):
         return {"output": ai_response.choices[0].message.content}
 
     except Exception as e:
+        print("TRANSFORM ERROR:", str(e))
         return {"error": str(e)}
 
 # -----------------------------
-# 📊 ANALYTICS (UPGRADED)
+# Analytics
 # -----------------------------
 @app.get("/analytics/{code}")
 def get_analytics(code: str, authorization: str = Header(None)):
-
     try:
         teacher_id = get_teacher_id(authorization)
 
@@ -267,9 +309,7 @@ def get_analytics(code: str, authorization: str = Header(None)):
                 students[name][mode] = 0
 
             students[name][mode] += 1
-
             total_activity += 1
-
             tool_counts[mode] = tool_counts.get(mode, 0) + 1
             student_totals[name] = student_totals.get(name, 0) + 1
 
@@ -287,7 +327,6 @@ def get_analytics(code: str, authorization: str = Header(None)):
     except Exception as e:
         print("ANALYTICS ERROR:", str(e))
         return {"error": str(e)}
-import uvicorn
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
